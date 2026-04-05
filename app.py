@@ -15,6 +15,7 @@ st.set_page_config(page_title="Induz Online Store", layout="wide")
 
 st.title(STORE_NAME)
 
+# Load products
 df = pd.read_excel("products.xlsx")
 
 if "cart" not in st.session_state:
@@ -35,14 +36,24 @@ for i, row in df.iterrows():
         st.write(f"Price: ₹{price}")
         st.write(f"Stock: {row['Stock']}")
 
-        qty = st.number_input(f"Qty_{i}", 1, int(row["Stock"]), 1)
+        # 🚫 Prevent selecting more than stock
+        qty = st.number_input(
+            f"Qty_{i}", 
+            min_value=1, 
+            max_value=int(row["Stock"]), 
+            step=1
+        )
 
         if st.button(f"Add {row['ProductCode']}"):
-            st.session_state.cart.append({
-                "name": row["ProductName"],
-                "cost": row["CostPrice"],
-                "qty": qty
-            })
+            if qty > row["Stock"]:
+                st.error("Not enough stock!")
+            else:
+                st.session_state.cart.append({
+                    "code": row["ProductCode"],
+                    "name": row["ProductName"],
+                    "cost": row["CostPrice"],
+                    "qty": qty
+                })
 
 # 🛒 Cart
 st.subheader("🛒 Your Cart")
@@ -63,10 +74,18 @@ pincode = st.text_input("Pincode")
 name = st.text_input("Customer Name")
 
 if st.button("Place Order"):
+
+    # 🔥 Reduce stock
+    for item in st.session_state.cart:
+        df.loc[df["ProductCode"] == item["code"], "Stock"] -= item["qty"]
+
+    # Save updated stock
+    df.to_excel("products.xlsx", index=False)
+
     delivery = get_delivery_cost(pincode)
     final_total = total + delivery
 
-    st.success("Order Ready!")
+    st.success("Order Placed!")
 
     message = f"""
 Hello {name} 😊
@@ -97,16 +116,5 @@ Total Amount: ₹{final_total}
 
     st.code(message)
 
-    # Save order
-    order = pd.DataFrame([{
-        "Customer": name,
-        "Total": final_total
-    }])
-
-    if os.path.exists("orders.xlsx"):
-        old = pd.read_excel("orders.xlsx")
-        order = pd.concat([old, order])
-
-    order.to_excel("orders.xlsx", index=False)
-
+    # Clear cart
     st.session_state.cart = []
