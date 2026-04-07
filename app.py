@@ -1,17 +1,13 @@
 import streamlit as st
 import sqlite3
 import os
-import urllib.parse
-from datetime import datetime
+from PIL import Image
+import base64
 
-# ---------------- CONFIG ----------------
-PACKAGING_COST = 20
-PROFIT_MARGIN = 140
+# ------------------ CONFIG ------------------
+st.set_page_config(page_title="Sajai Tomay", layout="wide")
 
-ADMIN_NUMBER = "917003884969"  # MAIN NUMBER (use WhatsApp group for both)
-UPI_ID = "yourupi@okbank"
-
-# ---------------- DB SETUP ----------------
+# ------------------ DATABASE ------------------
 conn = sqlite3.connect("store.db", check_same_thread=False)
 c = conn.cursor()
 
@@ -28,168 +24,152 @@ CREATE TABLE IF NOT EXISTS products (
 c.execute("""
 CREATE TABLE IF NOT EXISTS orders (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    date TEXT,
     customer TEXT,
-    phone TEXT,
-    address TEXT,
+    product TEXT,
+    quantity INTEGER,
     total INTEGER
 )
 """)
 
 conn.commit()
 
-# ---------------- LOAD PRODUCTS ----------------
-products = c.execute("SELECT * FROM products").fetchall()
+# ------------------ BACKGROUND LOGO ------------------
+def set_bg():
+    if os.path.exists("images/logo.png"):
+        with open("images/logo.png", "rb") as f:
+            data = base64.b64encode(f.read()).decode()
 
-# ---------------- UI ----------------
-st.set_page_config(page_title="Sajai Tomay", layout="wide")
+        st.markdown(f"""
+        <style>
+        .stApp {{
+            background-image: url("data:image/png;base64,{data}");
+            background-size: 300px;
+            background-repeat: no-repeat;
+            background-position: center;
+        }}
+        </style>
+        """, unsafe_allow_html=True)
 
+set_bg()
+
+# ------------------ TITLE ------------------
 st.markdown("<h1 style='text-align:center;'>🌸 Sajai Tomay</h1>", unsafe_allow_html=True)
 
-# ---------------- CART ----------------
-if "cart" not in st.session_state:
-    st.session_state.cart = []
+# ------------------ LOGIN ------------------
+mode = st.sidebar.selectbox("Login Type", ["Customer", "Admin"])
 
-# ---------------- PRODUCTS UI ----------------
-st.markdown("## 🛍️ Our Collection")
+# =========================================================
+# ===================== ADMIN PANEL =======================
+# =========================================================
 
-cols = st.columns(3)
+if mode == "Admin":
+    password = st.sidebar.text_input("Enter Admin Password", type="password")
 
-for i, p in enumerate(products):
-    with cols[i % 3]:
-        st.markdown("----")
+    if password == "admin123":
 
-        if os.path.exists(f"images/{p[4]}"):
-            st.image(f"images/{p[4]}", use_container_width=True)
+        st.header("🛠 Admin Panel")
 
-        price = p[2] + PACKAGING_COST + PROFIT_MARGIN
+        # -------- ADD PRODUCT --------
+        st.subheader("➕ Add Product")
 
-        st.markdown(f"### {p[1]}")
-        st.markdown(f"💰 ₹{price}")
-        st.markdown(f"📦 Stock: {p[3]}")
+        name = st.text_input("Product Name")
+        cost = st.number_input("Cost", 0)
+        stock = st.number_input("Stock", 0)
+        image_file = st.file_uploader("Upload Image")
 
-        qty = st.number_input(f"qty_{p[0]}", 1, int(p[3]), 1)
+        if st.button("Add Product"):
+            if image_file is not None:
 
-        if st.button(f"Add {p[0]}"):
-            st.session_state.cart.append({
-                "id": p[0],
-                "name": p[1],
-                "qty": qty,
-                "price": price
-            })
+                os.makedirs("images", exist_ok=True)
 
-# ---------------- CART ----------------
-st.markdown("## 🛒 Your Cart")
+                image_path = f"images/{image_file.name}"
+                with open(image_path, "wb") as f:
+                    f.write(image_file.getbuffer())
 
-total = 0
-details = ""
+                c.execute("INSERT INTO products (name, cost, stock, image) VALUES (?, ?, ?, ?)",
+                          (name, cost, stock, image_file.name))
+                conn.commit()
 
-for i, item in enumerate(st.session_state.cart):
-    item_total = item["price"] * item["qty"]
-    total += item_total
+                st.success("Product Added ✅")
 
-    details += f"{item['name']} x {item['qty']} = ₹{item_total}\n"
+        # -------- DELETE PRODUCT --------
+        st.subheader("🗑 Delete Product")
 
-    col1, col2 = st.columns([4,1])
+        products = c.execute("SELECT id, name FROM products").fetchall()
+        product_dict = {p[1]: p[0] for p in products}
 
-    with col1:
-        st.write(f"{item['name']} x {item['qty']}")
+        selected = st.selectbox("Select Product", list(product_dict.keys()))
 
-    with col2:
-        if st.button(f"❌ {i}"):
-            st.session_state.cart.pop(i)
-            st.rerun()
+        if st.button("Delete"):
+            c.execute("DELETE FROM products WHERE id=?", (product_dict[selected],))
+            conn.commit()
+            st.warning("Deleted ❌")
 
-# ---------------- CUSTOMER ----------------
-st.markdown("## 📦 Delivery Details")
+        # -------- VIEW ORDERS --------
+        st.subheader("📦 All Orders")
+        orders = c.execute("SELECT * FROM orders").fetchall()
 
-name = st.text_input("Name")
-phone = st.text_input("Phone")
-address = st.text_area("Address")
-pincode = st.text_input("Pincode")
-
-def delivery_cost(pin):
-    return 70 if str(pin).startswith("7") else 110
-
-# ---------------- ORDER ----------------
-if st.button("🚀 Place Order"):
-
-    if not name or not phone or not address:
-        st.error("Fill all details")
-
-    elif len(st.session_state.cart) == 0:
-        st.error("Cart empty")
+        for o in orders:
+            st.write(f"Customer: {o[1]} | Product: {o[2]} | Qty: {o[3]} | ₹{o[4]}")
 
     else:
-        delivery = delivery_cost(pincode)
-        final = total + delivery
+        st.warning("Enter correct password")
 
-        # 🔥 PROFESSIONAL MESSAGE
-        message = f"""
-🌸 Sajai Tomay 🌸
+# =========================================================
+# ===================== CUSTOMER VIEW =====================
+# =========================================================
 
-Thank you for your order ❤️
+else:
 
-Customer: {name}
-Phone: {phone}
-Address: {address}
+    st.subheader("🛍 Our Collection")
 
-Items:
-{details}
+    products = c.execute("SELECT * FROM products").fetchall()
 
-Delivery: ₹{delivery}
-Total Amount: ₹{final}
+    cols = st.columns(3)
 
-✨ We will contact you shortly for confirmation.
-Thank you for shopping with us!
-"""
+    cart = []
 
-        encoded = urllib.parse.quote(message)
+    for i, p in enumerate(products):
+        with cols[i % 3]:
+            image_path = f"images/{p[4]}"
 
-        whatsapp_link = f"https://wa.me/{ADMIN_NUMBER}?text={encoded}"
-        customer_link = f"https://wa.me/91{phone}?text={encoded}"
+            if os.path.exists(image_path):
+                st.image(image_path)
 
-        st.success("✅ Order Ready")
+            st.write(f"**{p[1]}**")
+            st.write(f"₹{p[2]}")
+            st.write(f"Stock: {p[3]}")
 
-        st.markdown(f"👉 [📲 Send Order (Admin)]({whatsapp_link})")
-        st.markdown(f"👉 [📲 Get Copy (Customer)]({customer_link})")
+            qty = st.number_input(f"Qty {p[0]}", 1, int(p[3]), key=p[0])
 
-        # ---------------- SAVE ORDER ----------------
-        c.execute("""
-        INSERT INTO orders (date, customer, phone, address, total)
-        VALUES (?, ?, ?, ?, ?)
-        """, (str(datetime.now()), name, phone, address, final))
+            if st.button(f"Add {p[0]}"):
+                cart.append((p, qty))
 
-        # ---------------- UPDATE STOCK ----------------
-        for item in st.session_state.cart:
-            c.execute("UPDATE products SET stock = stock - ? WHERE id = ?",
-                      (item["qty"], item["id"]))
+    # -------- ORDER --------
+    st.subheader("🧾 Place Order")
+
+    customer = st.text_input("Customer Name")
+
+    if st.button("Place Order"):
+        total = 0
+
+        for p, qty in cart:
+            total += p[2] * qty
+
+            # STOCK UPDATE
+            new_stock = p[3] - qty
+            c.execute("UPDATE products SET stock=? WHERE id=?", (new_stock, p[0]))
+
+            # SAVE ORDER
+            c.execute("INSERT INTO orders (customer, product, quantity, total) VALUES (?, ?, ?, ?)",
+                      (customer, p[1], qty, p[2]*qty))
 
         conn.commit()
 
-        # ---------------- PAYMENT ----------------
-        upi = f"upi://pay?pa={UPI_ID}&pn=SajaiTomay&am={final}"
-        st.markdown(f"👉 [💳 Pay Now]({upi})")
+        st.success("Order Placed ✅")
 
-        st.session_state.cart = []
-
-# ---------------- ADMIN PANEL ----------------
-st.sidebar.title("🔐 Admin Login")
-
-user = st.sidebar.text_input("User")
-pwd = st.sidebar.text_input("Pass", type="password")
-
-if user == "admin" and pwd == "1234":
-    st.sidebar.success("Logged in")
-
-    st.markdown("## 📊 Order History")
-
-    data = c.execute("SELECT * FROM orders").fetchall()
-    st.dataframe(data)
-    
-import sqlite3
-conn = sqlite3.connect("store.db")
-c = conn.cursor()
-
-c.execute("INSERT INTO products (name, cost, stock, image) VALUES ('Earrings', 80, 20, 'J001.jpg')")
-conn.commit()
+        st.markdown(f"""
+        Hello {customer} 😊  
+        Thank you for shopping with **Sajai Tomay** 🌸  
+        Your order has been confirmed!
+        """)
