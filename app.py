@@ -6,10 +6,6 @@ import urllib.parse
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
 
-# ✅ FIX FOR STREAMLIT CLOUD (RUN ONCE)
-if os.path.exists("store.db"):
-    os.remove("store.db")
-
 # ---------------- CONFIG ----------------
 st.set_page_config(page_title="Sajai Tomay", layout="wide")
 
