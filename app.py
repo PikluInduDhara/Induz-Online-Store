@@ -36,8 +36,19 @@ CREATE TABLE IF NOT EXISTS orders (
 )
 """)
 
+# SAFE COLUMN ADDITIONS
 try:
     c.execute("ALTER TABLE orders ADD COLUMN status TEXT DEFAULT 'Pending'")
+except:
+    pass
+
+try:
+    c.execute("ALTER TABLE orders ADD COLUMN payment TEXT DEFAULT 'No'")
+except:
+    pass
+
+try:
+    c.execute("ALTER TABLE orders ADD COLUMN tracking TEXT")
 except:
     pass
 
@@ -75,7 +86,7 @@ if mode == "Admin":
 
         st.header("Admin Panel")
 
-        # 🔥 SAFE AUTO REFRESH (FIXED)
+        # AUTO REFRESH
         if "last_refresh" not in st.session_state:
             st.session_state.last_refresh = time.time()
 
@@ -118,30 +129,51 @@ if mode == "Admin":
                 conn.commit()
                 st.rerun()
 
-        # ORDERS
+        # DELIVERY DASHBOARD
         st.subheader("Delivery Dashboard")
-        orders = c.execute("SELECT * FROM orders").fetchall()
 
-        data = []
+        orders = c.execute("SELECT * FROM orders").fetchall()
         total_sales = 0
 
-        for i, o in enumerate(orders, 1):
+        for o in orders:
             total_sales += o[6]
-            data.append({
-                "Sl": i,
-                "Customer": o[1],
-                "Phone": o[2],
-                "Address": o[3],
-                "Product": o[4],
-                "Qty": o[5],
-                "Value": o[6],
-                "Status": o[7]
-            })
 
-        if data:
-            df = pd.DataFrame(data)
-            st.dataframe(df, use_container_width=True)
-            st.write(f"### 💰 Total Sales: ₹{total_sales}")
+            col1, col2, col3, col4 = st.columns([2,3,3,2])
+
+            with col1:
+                payment = st.selectbox(
+                    f"Payment {o[0]}",
+                    ["Yes", "No"],
+                    index=0 if o[8] == "Yes" else 1,
+                    key=f"pay_{o[0]}"
+                )
+
+            with col2:
+                tracking = st.text_input(
+                    f"Tracking {o[0]}",
+                    value=o[9] if o[9] else "",
+                    key=f"track_{o[0]}"
+                )
+
+            with col3:
+                st.write(f"""
+                👤 {o[1]}  
+                📞 {o[2]}  
+                📍 {o[3]}  
+                🛍 {o[4]} x{o[5]} = ₹{o[6]}
+                """)
+
+            with col4:
+                if st.button(f"Update {o[0]}"):
+                    c.execute(
+                        "UPDATE orders SET payment=?, tracking=? WHERE id=?",
+                        (payment, tracking, o[0])
+                    )
+                    conn.commit()
+                    st.success("Updated ✅")
+                    st.rerun()
+
+        st.write(f"### 💰 Total Sales: ₹{total_sales}")
 
         # STATUS UPDATE
         st.subheader("Update Order Status")
@@ -237,10 +269,8 @@ Thank you for shopping with us ❤️
         st.success("Order placed")
         st.toast("🆕 New Order Ready to Send!", icon="🔔")
 
-        # WHATSAPP
         st.markdown(f"[📩 Send Order](https://wa.me/917003884969?text={encoded})")
 
-        # PDF
         pdf = "invoice.pdf"
         doc = SimpleDocTemplate(pdf)
         styles = getSampleStyleSheet()
@@ -249,7 +279,6 @@ Thank you for shopping with us ❤️
         with open(pdf, "rb") as f:
             st.download_button("Download Invoice", f)
 
-        # NEXT ORDER
         if st.button("Next Order"):
             st.session_state.cart = []
             st.session_state.done = False
