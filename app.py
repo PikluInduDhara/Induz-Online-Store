@@ -1,13 +1,15 @@
-# ✅ FINAL STABLE VERSION WITH EXTRA FEATURES
-
 import streamlit as st
 import sqlite3
 import os
 import base64
 import urllib.parse
 import pandas as pd
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.platypus import SimpleDocTemplate, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
+
+# ✅ FIX FOR STREAMLIT CLOUD (RUN ONCE)
+if os.path.exists("store.db"):
+    os.remove("store.db")
 
 st.set_page_config(page_title="Sajai Tomay", layout="wide")
 
@@ -25,7 +27,6 @@ CREATE TABLE IF NOT EXISTS products (
 )
 """)
 
-# SAFE TABLE CREATION (FIX FOR EXISTING DB)
 c.execute("""
 CREATE TABLE IF NOT EXISTS orders (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -38,7 +39,6 @@ CREATE TABLE IF NOT EXISTS orders (
 )
 """)
 
-# ADD STATUS COLUMN IF NOT EXISTS (IMPORTANT FIX)
 try:
     c.execute("ALTER TABLE orders ADD COLUMN status TEXT DEFAULT 'Pending'")
 except:
@@ -46,7 +46,7 @@ except:
 
 conn.commit()
 
-# ---------------- BACKGROUND LOGO (RESTORED) ----------------
+# ---------------- BACKGROUND ----------------
 def set_bg():
     if os.path.exists("images/logo.png"):
         with open("images/logo.png", "rb") as f:
@@ -59,7 +59,6 @@ def set_bg():
             background-size: 250px;
             background-repeat: no-repeat;
             background-position: center;
-            opacity: 0.95;
         }}
         </style>
         """, unsafe_allow_html=True)
@@ -72,6 +71,7 @@ mode = st.sidebar.selectbox("Login Type", ["Customer", "Admin"])
 
 # ================= ADMIN =================
 if mode == "Admin":
+
     password = st.sidebar.text_input("Password", type="password")
 
     if password == "admin123":
@@ -97,7 +97,7 @@ if mode == "Admin":
                 conn.commit()
                 st.success("Added")
 
-        # PRODUCT LIST
+        # PRODUCTS
         st.subheader("Products")
         products = c.execute("SELECT * FROM products").fetchall()
 
@@ -136,7 +136,6 @@ if mode == "Admin":
         if data:
             df = pd.DataFrame(data)
             st.dataframe(df, use_container_width=True)
-
             st.write(f"### 💰 Total Sales: ₹{total_sales}")
 
         # STATUS UPDATE
@@ -146,8 +145,6 @@ if mode == "Admin":
                 c.execute("UPDATE orders SET status='Delivered' WHERE id=?", (o[0],))
                 conn.commit()
                 st.rerun()
-
-        st.rerun()
 
     else:
         st.warning("Wrong password")
@@ -172,41 +169,73 @@ else:
         if st.button(f"Add {p[0]}"):
             st.session_state.cart.append((p, qty))
 
+    # CART
     st.subheader("Cart")
     total = 0
     order_text = ""
 
     for p, q in st.session_state.cart:
-        total += p[2]*q
-        order_text += f"{p[1]} x {q}\n"
-        st.write(f"{p[1]} x {q}")
+        item_total = p[2] * q
+        total += item_total
+        order_text += f"{p[1]} x {q} = ₹{item_total}\n"
+        st.write(f"{p[1]} x {q} = ₹{item_total}")
 
     st.write(f"Total ₹{total}")
 
+    # CUSTOMER DETAILS
     name = st.text_input("Name")
     phone = st.text_input("Phone")
     addr = st.text_area("Address")
 
+    # PLACE ORDER
     if st.button("Place Order"):
-        msg = f"Order\n{name}\n{phone}\n{addr}\n{order_text}Total ₹{total}"
+
+        order_ids = []
 
         for p,q in st.session_state.cart:
             c.execute("INSERT INTO orders VALUES (NULL,?,?,?,?,?,?,?)",
                       (name, phone, addr, p[1], q, p[2]*q, "Pending"))
+            order_ids.append(c.lastrowid)
+
             c.execute("UPDATE products SET stock=? WHERE id=?", (p[3]-q, p[0]))
 
         conn.commit()
 
+        order_id = order_ids[-1] if order_ids else "N/A"
+
+        msg = f"""
+🌸 Sajai Tomay Order 🌸
+
+🆔 Order ID: {order_id}
+
+👤 Name: {name}
+📞 Phone: {phone}
+📍 Address: {addr}
+
+🛍 Items:
+{order_text}
+
+💰 Total: ₹{total}
+
+Thank you for shopping with us ❤️
+"""
+
         st.session_state.done = True
         st.session_state.msg = msg
 
+    # AFTER ORDER
     if "done" in st.session_state and st.session_state.done:
+
         msg = st.session_state.msg
         encoded = urllib.parse.quote(msg)
 
         st.success("Order placed")
-        st.markdown(f"[Send WhatsApp](https://wa.me/?text={encoded})")
+        st.toast("🆕 New Order Ready to Send!", icon="🔔")
 
+        # WHATSAPP (ADMIN-1 ONLY)
+        st.markdown(f"[📩 Send Order](https://wa.me/917003884969?text={encoded})")
+
+        # PDF
         pdf = "invoice.pdf"
         doc = SimpleDocTemplate(pdf)
         styles = getSampleStyleSheet()
@@ -215,6 +244,7 @@ else:
         with open(pdf, "rb") as f:
             st.download_button("Download Invoice", f)
 
+        # NEXT ORDER
         if st.button("Next Order"):
             st.session_state.cart = []
             st.session_state.done = False
