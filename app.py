@@ -8,6 +8,10 @@ import time
 from reportlab.platypus import SimpleDocTemplate, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
 
+# ✅ FIX FOR STREAMLIT CLOUD (RUN ONCE)
+if os.path.exists("store.db"):
+    os.remove("store.db")
+
 st.set_page_config(page_title="Sajai Tomay", layout="wide")
 
 # ---------------- DATABASE ----------------
@@ -86,7 +90,7 @@ if mode == "Admin":
 
         st.header("Admin Panel")
 
-        # AUTO REFRESH
+        # AUTO REFRESH (SAFE)
         if "last_refresh" not in st.session_state:
             st.session_state.last_refresh = time.time()
 
@@ -124,7 +128,7 @@ if mode == "Admin":
         st.subheader("Update Stock")
         for p in products:
             new_stock = st.number_input(f"{p[1]}", 0, key=f"s{p[0]}")
-            if st.button(f"Update {p[0]}"):
+            if st.button(f"Update {p[0]}", key=f"stock_update_{p[0]}"):
                 c.execute("UPDATE products SET stock=? WHERE id=?", (new_stock, p[0]))
                 conn.commit()
                 st.rerun()
@@ -144,14 +148,14 @@ if mode == "Admin":
                 payment = st.selectbox(
                     f"Payment {o[0]}",
                     ["Yes", "No"],
-                    index=0 if o[8] == "Yes" else 1,
+                    index=0 if len(o) > 8 and o[8] == "Yes" else 1,
                     key=f"pay_{o[0]}"
                 )
 
             with col2:
                 tracking = st.text_input(
                     f"Tracking {o[0]}",
-                    value=o[9] if o[9] else "",
+                    value=o[9] if len(o) > 9 and o[9] else "",
                     key=f"track_{o[0]}"
                 )
 
@@ -164,7 +168,7 @@ if mode == "Admin":
                 """)
 
             with col4:
-                if st.button(f"Update {o[0]}"):
+                if st.button(f"Update {o[0]}", key=f"update_{o[0]}"):
                     c.execute(
                         "UPDATE orders SET payment=?, tracking=? WHERE id=?",
                         (payment, tracking, o[0])
@@ -178,7 +182,7 @@ if mode == "Admin":
         # STATUS UPDATE
         st.subheader("Update Order Status")
         for o in orders:
-            if st.button(f"Mark Delivered {o[0]}"):
+            if st.button(f"Mark Delivered {o[0]}", key=f"status_{o[0]}"):
                 c.execute("UPDATE orders SET status='Delivered' WHERE id=?", (o[0],))
                 conn.commit()
                 st.rerun()
@@ -203,7 +207,7 @@ else:
         st.write(f"{p[1]} ₹{p[2]} Stock {p[3]}")
         qty = st.number_input(f"Qty {p[0]}", 1, int(p[3]), key=f"q{p[0]}")
 
-        if st.button(f"Add {p[0]}"):
+        if st.button(f"Add {p[0]}", key=f"add_{p[0]}"):
             st.session_state.cart.append((p, qty))
 
     # CART
