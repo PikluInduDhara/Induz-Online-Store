@@ -6,7 +6,11 @@ import urllib.parse
 import pandas as pd
 from reportlab.platypus import SimpleDocTemplate, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
+from streamlit_autorefresh import st_autorefresh   # ✅ NEW
 
+# ✅ FIX FOR STREAMLIT CLOUD (RUN ONCE)
+if os.path.exists("store.db"):
+    os.remove("store.db")
 st.set_page_config(page_title="Sajai Tomay", layout="wide")
 
 # ---------------- DATABASE ----------------
@@ -71,6 +75,9 @@ if mode == "Admin":
     password = st.sidebar.text_input("Password", type="password")
 
     if password == "admin123":
+
+        # 🔥 AUTO REFRESH EVERY 5 SECONDS
+        st_autorefresh(interval=5000, key="admin_refresh")
 
         st.header("Admin Panel")
 
@@ -228,7 +235,7 @@ Thank you for shopping with us ❤️
         st.success("Order placed")
         st.toast("🆕 New Order Ready to Send!", icon="🔔")
 
-        # WHATSAPP (ADMIN-1 ONLY)
+        # WHATSAPP (ADMIN-1)
         st.markdown(f"[📩 Send Order](https://wa.me/917003884969?text={encoded})")
 
         # PDF
