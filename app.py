@@ -1,3 +1,5 @@
+# ✅ FINAL STABLE VERSION WITH EXTRA FEATURES
+
 import streamlit as st
 import sqlite3
 import os
@@ -7,7 +9,10 @@ import pandas as pd
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
 
-# ---------------- CONFIG ----------------
+# ✅ FIX FOR STREAMLIT CLOUD (RUN ONCE)
+if os.path.exists("store.db"):
+    os.remove("store.db")
+
 st.set_page_config(page_title="Sajai Tomay", layout="wide")
 
 # ---------------- DATABASE ----------------
@@ -32,254 +37,159 @@ CREATE TABLE IF NOT EXISTS orders (
     address TEXT,
     product TEXT,
     quantity INTEGER,
-    total INTEGER
+    total INTEGER,
+    status TEXT DEFAULT 'Pending'
 )
 """)
 
 conn.commit()
 
-# ---------------- BACKGROUND LOGO ----------------
-def set_bg():
-    if os.path.exists("images/logo.png"):
-        with open("images/logo.png", "rb") as f:
-            data = base64.b64encode(f.read()).decode()
-
-        st.markdown(f"""
-        <style>
-        .stApp {{
-            background-image: url("data:image/png;base64,{data}");
-            background-size: 280px;
-            background-repeat: no-repeat;
-            background-position: center;
-            opacity: 0.97;
-        }}
-        </style>
-        """, unsafe_allow_html=True)
-
-set_bg()
-
-# ---------------- TITLE ----------------
-st.markdown("<h1 style='text-align:center;'>🌸 Sajai Tomay</h1>", unsafe_allow_html=True)
-
-# ---------------- LOGIN ----------------
+# ---------------- UI ----------------
+st.title("🌸 Sajai Tomay")
 mode = st.sidebar.selectbox("Login Type", ["Customer", "Admin"])
 
-# =========================================================
-# ===================== ADMIN PANEL =======================
-# =========================================================
+# ================= ADMIN =================
 if mode == "Admin":
-
-    password = st.sidebar.text_input("Enter Admin Password", type="password")
+    password = st.sidebar.text_input("Password", type="password")
 
     if password == "admin123":
 
-        st.header("🛠 Admin Panel")
+        st.header("Admin Panel")
 
-        # -------- ADD PRODUCT --------
-        st.subheader("➕ Add Product")
-
-        name = st.text_input("Product Name")
+        # ADD PRODUCT
+        st.subheader("Add Product")
+        name = st.text_input("Name")
         cost = st.number_input("Cost", 0)
         stock = st.number_input("Stock", 0)
-        image_file = st.file_uploader("Upload Image")
+        image = st.file_uploader("Image")
 
-        if st.button("Add Product"):
-            if image_file:
+        if st.button("Add"):
+            if image:
                 os.makedirs("images", exist_ok=True)
-
-                path = f"images/{image_file.name}"
+                path = f"images/{image.name}"
                 with open(path, "wb") as f:
-                    f.write(image_file.getbuffer())
+                    f.write(image.getbuffer())
 
-                c.execute("INSERT INTO products (name, cost, stock, image) VALUES (?, ?, ?, ?)",
-                          (name, cost, stock, image_file.name))
+                c.execute("INSERT INTO products VALUES (NULL,?,?,?,?)",
+                          (name, cost, stock, image.name))
                 conn.commit()
+                st.success("Added")
 
-                st.success("Product Added ✅")
-
-        # -------- PRODUCT LIST --------
-        st.subheader("📋 Product List")
-
+        # PRODUCT LIST
+        st.subheader("Products")
         products = c.execute("SELECT * FROM products").fetchall()
 
         for p in products:
-            col1, col2 = st.columns([4,1])
+            st.write(f"{p[1]} | ₹{p[2]} | Stock {p[3]}")
 
-            with col1:
-                st.write(f"{p[1]} | ₹{p[2]} | Stock: {p[3]}")
-
-            with col2:
-                if st.button(f"Delete {p[0]}"):
-                    c.execute("DELETE FROM products WHERE id=?", (p[0],))
-                    conn.commit()
-                    st.success("Deleted")
-                    st.rerun()
-
-        # -------- STOCK UPDATE --------
-        st.subheader("📦 Update Stock")
-
+        # STOCK UPDATE
+        st.subheader("Update Stock")
         for p in products:
-            col1, col2, col3 = st.columns([3,2,1])
+            new_stock = st.number_input(f"{p[1]}", 0, key=f"s{p[0]}")
+            if st.button(f"Update {p[0]}"):
+                c.execute("UPDATE products SET stock=? WHERE id=?", (new_stock, p[0]))
+                conn.commit()
+                st.rerun()
 
-            with col1:
-                st.write(p[1])
-
-            with col2:
-                new_stock = st.number_input(f"New Stock for {p[1]}", 0, key=f"stock_{p[0]}")
-
-            with col3:
-                if st.button(f"Update {p[0]}"):
-                    c.execute("UPDATE products SET stock=? WHERE id=?", (new_stock, p[0]))
-                    conn.commit()
-                    st.success(f"{p[1]} stock updated ✅")
-                    st.rerun()
-
-        # -------- DELIVERY DASHBOARD --------
-        st.subheader("📦 Delivery Dashboard")
-
+        # ORDERS
+        st.subheader("Delivery Dashboard")
         orders = c.execute("SELECT * FROM orders").fetchall()
 
-        if orders:
-            data = []
-            for i, o in enumerate(orders, start=1):
-                data.append({
-                    "Sl No": i,
-                    "Customer Name": o[1],
-                    "Phone": o[2],
-                    "Address": o[3],
-                    "Product": o[4],
-                    "Qty": o[5],
-                    "Invoice Value (₹)": o[6]
-                })
+        data = []
+        total_sales = 0
 
+        for i, o in enumerate(orders, 1):
+            total_sales += o[6]
+            data.append({
+                "Sl": i,
+                "Customer": o[1],
+                "Phone": o[2],
+                "Address": o[3],
+                "Product": o[4],
+                "Qty": o[5],
+                "Value": o[6],
+                "Status": o[7]
+            })
+
+        if data:
             df = pd.DataFrame(data)
             st.dataframe(df, use_container_width=True)
 
-        # 🔥 AUTO REFRESH ADMIN (IMPORTANT FIX)
+            st.write(f"### 💰 Total Sales: ₹{total_sales}")
+
+        # STATUS UPDATE
+        st.subheader("Update Order Status")
+        for o in orders:
+            if st.button(f"Mark Delivered {o[0]}"):
+                c.execute("UPDATE orders SET status='Delivered' WHERE id=?", (o[0],))
+                conn.commit()
+                st.rerun()
+
         st.rerun()
 
     else:
-        st.warning("Enter correct password")
+        st.warning("Wrong password")
 
-# =========================================================
-# ===================== CUSTOMER VIEW =====================
-# =========================================================
+# ================= CUSTOMER =================
 else:
 
-    st.subheader("🛍 Our Collection")
-
+    st.subheader("Products")
     products = c.execute("SELECT * FROM products").fetchall()
 
     if "cart" not in st.session_state:
         st.session_state.cart = []
 
-    cols = st.columns(3)
+    for p in products:
+        st.write(f"{p[1]} ₹{p[2]} Stock {p[3]}")
+        qty = st.number_input(f"Qty {p[0]}", 1, int(p[3]), key=f"q{p[0]}")
 
-    for i, p in enumerate(products):
-        with cols[i % 3]:
+        if st.button(f"Add {p[0]}"):
+            st.session_state.cart.append((p, qty))
 
-            img_path = f"images/{p[4]}"
-            if os.path.exists(img_path):
-                st.image(img_path)
-
-            st.write(f"**{p[1]}**")
-            st.write(f"₹{p[2]}")
-            st.write(f"Stock: {p[3]}")
-
-            qty = st.number_input(f"Qty {p[0]}", 1, int(p[3]), key=f"qty_{p[0]}")
-
-            if st.button(f"Add {p[0]}"):
-                st.session_state.cart.append((p, qty))
-                st.success("Added to cart")
-
-    # ---------------- CART ----------------
-    st.subheader("🛒 Cart")
-
+    st.subheader("Cart")
     total = 0
     order_text = ""
 
-    for p, qty in st.session_state.cart:
-        st.write(f"{p[1]} x {qty} = ₹{p[2]*qty}")
-        total += p[2] * qty
-        order_text += f"{p[1]} x {qty} = ₹{p[2]*qty}\n"
+    for p, q in st.session_state.cart:
+        total += p[2]*q
+        order_text += f"{p[1]} x {q}\n"
+        st.write(f"{p[1]} x {q}")
 
-    st.write(f"### Total: ₹{total}")
+    st.write(f"Total ₹{total}")
 
-    # ---------------- CHECKOUT ----------------
-    st.subheader("🧾 Checkout")
-
-    customer = st.text_input("Customer Name")
-    phone = st.text_input("Phone Number")
-    address = st.text_area("Delivery Address")
+    name = st.text_input("Name")
+    phone = st.text_input("Phone")
+    addr = st.text_area("Address")
 
     if st.button("Place Order"):
+        msg = f"Order\n{name}\n{phone}\n{addr}\n{order_text}Total ₹{total}"
 
-        message = f"""
-🌸 Sajai Tomay Order 🌸
-
-👤 Name: {customer}
-📞 Phone: {phone}
-📍 Address: {address}
-
-🛍 Items:
-{order_text}
-
-💰 Total: ₹{total}
-
-Thank you for shopping with us ❤️
-"""
-
-        for p, qty in st.session_state.cart:
-            new_stock = p[3] - qty
-            c.execute("UPDATE products SET stock=? WHERE id=?", (new_stock, p[0]))
-
-            c.execute("INSERT INTO orders (customer, phone, address, product, quantity, total) VALUES (?, ?, ?, ?, ?, ?)",
-                      (customer, phone, address, p[1], qty, p[2]*qty))
+        for p,q in st.session_state.cart:
+            c.execute("INSERT INTO orders VALUES (NULL,?,?,?,?,?,?,?)",
+                      (name, phone, addr, p[1], q, p[2]*q, "Pending"))
+            c.execute("UPDATE products SET stock=? WHERE id=?", (p[3]-q, p[0]))
 
         conn.commit()
 
-        # 🔥 IMPORTANT FIX: DO NOT RERUN HERE
-        st.session_state.order_done = True
-        st.session_state.last_message = message
+        st.session_state.done = True
+        st.session_state.msg = msg
 
-    # ✅ SHOW AFTER ORDER (PERSIST FIX)
-    if "order_done" in st.session_state and st.session_state.order_done:
+    if "done" in st.session_state and st.session_state.done:
+        msg = st.session_state.msg
+        encoded = urllib.parse.quote(msg)
 
-        message = st.session_state.last_message
-        encoded = urllib.parse.quote(message)
+        st.success("Order placed")
+        st.markdown(f"[Send WhatsApp](https://wa.me/?text={encoded})")
 
-        st.success("Order Placed ✅")
-
-        st.markdown("### 📲 Send Order to WhatsApp")
-        st.markdown(f"[👉 Send to 7003884969](https://wa.me/917003884969?text={encoded})")
-        st.markdown(f"[👉 Send to 7980238789](https://wa.me/917980238789?text={encoded})")
-
-        pdf_file = "invoice.pdf"
-        doc = SimpleDocTemplate(pdf_file)
+        pdf = "invoice.pdf"
+        doc = SimpleDocTemplate(pdf)
         styles = getSampleStyleSheet()
+        doc.build([Paragraph(msg, styles["Normal"])])
 
-        elements = []
-        elements.append(Paragraph("Sajai Tomay Invoice", styles["Title"]))
-        elements.append(Spacer(1, 10))
-        elements.append(Paragraph(message, styles["Normal"]))
+        with open(pdf, "rb") as f:
+            st.download_button("Download Invoice", f)
 
-        doc.build(elements)
-
-        with open(pdf_file, "rb") as f:
-            st.download_button("📄 Download Invoice", f, file_name="invoice.pdf")
-
-        st.markdown(f"""
-        ### 🎉 Order Confirmed!
-
-        Hello 😊  
-        Your order has been placed successfully.
-
-        🚚 Delivery coming soon  
-        💖 Thank you for choosing Sajai Tomay!
-        """)
-
-        # 🔥 AUTO RESET AFTER ORDER (NEW FIX)
-        if st.button("Proceed Next Order"):
+        if st.button("Next Order"):
             st.session_state.cart = []
-            st.session_state.order_done = False
+            st.session_state.done = False
             st.rerun()
