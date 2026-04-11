@@ -7,9 +7,6 @@ import time
 from reportlab.platypus import SimpleDocTemplate, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
 
-# ✅ FIX FOR STREAMLIT CLOUD (RUN ONCE)
-if os.path.exists("store.db"):
-    os.remove("store.db")
 
 st.set_page_config(page_title="Sajai Tomay", layout="wide")
 
