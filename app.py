@@ -1,4 +1,4 @@
-## ✅ FINAL STABLE VERSION WITH EXTRA FEATURES
+# ✅ FINAL STABLE VERSION WITH EXTRA FEATURES
 
 import streamlit as st
 import sqlite3
@@ -45,6 +45,26 @@ except:
     pass
 
 conn.commit()
+
+# ---------------- BACKGROUND LOGO (RESTORED) ----------------
+def set_bg():
+    if os.path.exists("images/logo.png"):
+        with open("images/logo.png", "rb") as f:
+            data = base64.b64encode(f.read()).decode()
+
+        st.markdown(f"""
+        <style>
+        .stApp {{
+            background-image: url("data:image/png;base64,{data}");
+            background-size: 250px;
+            background-repeat: no-repeat;
+            background-position: center;
+            opacity: 0.95;
+        }}
+        </style>
+        """, unsafe_allow_html=True)
+
+set_bg()
 
 # ---------------- UI ----------------
 st.title("🌸 Sajai Tomay")
@@ -142,6 +162,10 @@ else:
         st.session_state.cart = []
 
     for p in products:
+        img_path = f"images/{p[4]}"
+        if os.path.exists(img_path):
+            st.image(img_path, width=200)
+
         st.write(f"{p[1]} ₹{p[2]} Stock {p[3]}")
         qty = st.number_input(f"Qty {p[0]}", 1, int(p[3]), key=f"q{p[0]}")
 
