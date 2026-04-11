@@ -7,6 +7,10 @@ import pandas as pd
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
 
+# ✅ FIX FOR STREAMLIT CLOUD (RUN ONCE)
+if os.path.exists("store.db"):
+    os.remove("store.db")
+
 # ---------------- CONFIG ----------------
 st.set_page_config(page_title="Sajai Tomay", layout="wide")
 
@@ -96,7 +100,6 @@ if mode == "Admin":
                 conn.commit()
 
                 st.success("Product Added ✅")
-                st.rerun()
 
         # -------- PRODUCT LIST --------
         st.subheader("📋 Product List")
@@ -155,8 +158,9 @@ if mode == "Admin":
 
             df = pd.DataFrame(data)
             st.dataframe(df, use_container_width=True)
-        else:
-            st.info("No orders yet")
+
+        # 🔥 AUTO REFRESH ADMIN (IMPORTANT FIX)
+        st.rerun()
 
     else:
         st.warning("Enter correct password")
@@ -238,9 +242,17 @@ Thank you for shopping with us ❤️
 
         conn.commit()
 
-        st.success("Order Placed ✅")
+        # 🔥 IMPORTANT FIX: DO NOT RERUN HERE
+        st.session_state.order_done = True
+        st.session_state.last_message = message
 
+    # ✅ SHOW AFTER ORDER (PERSIST FIX)
+    if "order_done" in st.session_state and st.session_state.order_done:
+
+        message = st.session_state.last_message
         encoded = urllib.parse.quote(message)
+
+        st.success("Order Placed ✅")
 
         st.markdown("### 📲 Send Order to WhatsApp")
         st.markdown(f"[👉 Send to 7003884969](https://wa.me/917003884969?text={encoded})")
@@ -263,12 +275,14 @@ Thank you for shopping with us ❤️
         st.markdown(f"""
         ### 🎉 Order Confirmed!
 
-        Hello {customer} 😊  
+        Hello 😊  
         Your order has been placed successfully.
 
         🚚 Delivery coming soon  
         💖 Thank you for choosing Sajai Tomay!
         """)
 
-        st.session_state.cart = []
-        st.rerun()
+        if st.button("Clear Order"):
+            st.session_state.cart = []
+            st.session_state.order_done = False
+            st.rerun()
