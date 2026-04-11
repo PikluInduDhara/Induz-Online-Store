@@ -73,11 +73,15 @@ if mode == "Admin":
 
     if password == "admin123":
 
-        # 🔥 AUTO REFRESH EVERY 5 SECONDS (SAFE)
-        time.sleep(5)
-        st.rerun()
-
         st.header("Admin Panel")
+
+        # 🔥 SAFE AUTO REFRESH (FIXED)
+        if "last_refresh" not in st.session_state:
+            st.session_state.last_refresh = time.time()
+
+        if time.time() - st.session_state.last_refresh > 5:
+            st.session_state.last_refresh = time.time()
+            st.rerun()
 
         # ADD PRODUCT
         st.subheader("Add Product")
