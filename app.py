@@ -8,6 +8,10 @@ import time
 from reportlab.platypus import SimpleDocTemplate, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
 
+# ✅ FIX FOR STREAMLIT CLOUD (RUN ONCE)
+if os.path.exists("store.db"):
+    os.remove("store.db")
+
 st.set_page_config(page_title="Sajai Tomay", layout="wide")
 
 # ---------------- DATABASE ----------------
@@ -37,41 +41,18 @@ CREATE TABLE IF NOT EXISTS orders (
 """)
 
 # SAFE COLUMN ADDITIONS
-try:
-    c.execute("ALTER TABLE orders ADD COLUMN status TEXT DEFAULT 'Pending'")
-except:
-    pass
-
-try:
-    c.execute("ALTER TABLE orders ADD COLUMN payment TEXT DEFAULT 'No'")
-except:
-    pass
-
-try:
-    c.execute("ALTER TABLE orders ADD COLUMN tracking TEXT")
-except:
-    pass
+for col, query in [
+    ("status", "ALTER TABLE orders ADD COLUMN status TEXT DEFAULT 'Pending'"),
+    ("payment", "ALTER TABLE orders ADD COLUMN payment TEXT DEFAULT 'No'"),
+    ("tracking", "ALTER TABLE orders ADD COLUMN tracking TEXT"),
+    ("payment_ref", "ALTER TABLE orders ADD COLUMN payment_ref TEXT")
+]:
+    try:
+        c.execute(query)
+    except:
+        pass
 
 conn.commit()
-
-# ---------------- BACKGROUND ----------------
-def set_bg():
-    if os.path.exists("images/logo.png"):
-        with open("images/logo.png", "rb") as f:
-            data = base64.b64encode(f.read()).decode()
-
-        st.markdown(f"""
-        <style>
-        .stApp {{
-            background-image: url("data:image/png;base64,{data}");
-            background-size: 250px;
-            background-repeat: no-repeat;
-            background-position: center;
-        }}
-        </style>
-        """, unsafe_allow_html=True)
-
-set_bg()
 
 # ---------------- UI ----------------
 st.title("🌸 Sajai Tomay")
@@ -94,94 +75,89 @@ if mode == "Admin":
             st.session_state.last_refresh = time.time()
             st.rerun()
 
-        # ADD PRODUCT
-        st.subheader("Add Product")
-        name = st.text_input("Name")
-        cost = st.number_input("Cost", 0)
-        stock = st.number_input("Stock", 0)
-        image = st.file_uploader("Image")
-
-        if st.button("Add"):
-            if image:
-                os.makedirs("images", exist_ok=True)
-                path = f"images/{image.name}"
-                with open(path, "wb") as f:
-                    f.write(image.getbuffer())
-
-                c.execute("INSERT INTO products VALUES (NULL,?,?,?,?)",
-                          (name, cost, stock, image.name))
-                conn.commit()
-                st.success("Added")
-
-        # PRODUCTS
-        st.subheader("Products")
-        products = c.execute("SELECT * FROM products").fetchall()
-
-        for p in products:
-            st.write(f"{p[1]} | ₹{p[2]} | Stock {p[3]}")
-
-        # STOCK UPDATE
-        st.subheader("Update Stock")
-        for p in products:
-            new_stock = st.number_input(f"{p[1]}", 0, key=f"s{p[0]}")
-            if st.button(f"Update {p[0]}", key=f"stock_{p[0]}"):
-                c.execute("UPDATE products SET stock=? WHERE id=?", (new_stock, p[0]))
-                conn.commit()
-                st.rerun()
-
-        # DELIVERY DASHBOARD
         st.subheader("Delivery Dashboard")
 
         orders = c.execute("SELECT * FROM orders").fetchall()
         total_sales = 0
+        export_data = []
+
+        # HEADER
+        h1, h2, h3, h4, h5, h6, h7, h8, h9 = st.columns(9)
+        h1.write("Order ID")
+        h2.write("Customer")
+        h3.write("Phone")
+        h4.write("Address")
+        h5.write("Product")
+        h6.write("Qty")
+        h7.write("Value")
+        h8.write("Payment")
+        h9.write("Delivery")
 
         for o in orders:
             total_sales += o[6]
 
-            col1, col2, col3, col4 = st.columns([2,3,3,2])
+            c1, c2, c3, c4, c5, c6, c7, c8, c9 = st.columns(9)
 
-            with col1:
-                payment = st.selectbox(
-                    f"Payment {o[0]}",
-                    ["Yes", "No"],
-                    index=0 if len(o) > 8 and o[8] == "Yes" else 1,
-                    key=f"pay_{o[0]}"
+            c1.write(o[0])
+            c2.write(o[1])
+            c3.write(o[2])
+            c4.write(o[3])
+            c5.write(o[4])
+            c6.write(o[5])
+            c7.write(o[6])
+
+            payment = c8.selectbox(
+                "", ["Yes", "No"],
+                index=0 if len(o)>8 and o[8]=="Yes" else 1,
+                key=f"pay_{o[0]}"
+            )
+
+            delivery = c9.selectbox(
+                "", ["Pending", "Delivered"],
+                index=0 if o[7]=="Pending" else 1,
+                key=f"del_{o[0]}"
+            )
+
+            # Payment Ref below row
+            payment_ref = st.text_input(
+                f"Payment Ref {o[0]}",
+                value=o[10] if len(o)>10 and o[10] else "",
+                key=f"ref_{o[0]}"
+            )
+
+            # SAVE
+            if st.button(f"Save {o[0]}", key=f"save_{o[0]}"):
+                c.execute(
+                    "UPDATE orders SET payment=?, status=?, payment_ref=? WHERE id=?",
+                    (payment, delivery, payment_ref, o[0])
                 )
+                conn.commit()
+                st.rerun()
 
-            with col2:
-                tracking = st.text_input(
-                    f"Tracking {o[0]}",
-                    value=o[9] if len(o) > 9 and o[9] else "",
-                    key=f"track_{o[0]}"
-                )
-
-            with col3:
-                st.write(f"""
-                👤 {o[1]}  
-                📞 {o[2]}  
-                📍 {o[3]}  
-                🛍 {o[4]} x{o[5]} = ₹{o[6]}
-                """)
-
-            with col4:
-                if st.button(f"Update {o[0]}", key=f"update_{o[0]}"):
-                    c.execute(
-                        "UPDATE orders SET payment=?, tracking=? WHERE id=?",
-                        (payment, tracking, o[0])
-                    )
-                    conn.commit()
-                    st.success("Updated ✅")
-                    st.rerun()
+            export_data.append({
+                "Order ID": o[0],
+                "Customer": o[1],
+                "Phone": o[2],
+                "Address": o[3],
+                "Product": o[4],
+                "Qty": o[5],
+                "Value": o[6],
+                "Payment": o[8] if len(o)>8 else "",
+                "Delivery": o[7],
+                "Payment Ref": o[10] if len(o)>10 else ""
+            })
 
         st.write(f"### 💰 Total Sales: ₹{total_sales}")
 
-        # STATUS UPDATE
-        st.subheader("Update Order Status")
-        for o in orders:
-            if st.button(f"Mark Delivered {o[0]}", key=f"status_{o[0]}"):
-                c.execute("UPDATE orders SET status='Delivered' WHERE id=?", (o[0],))
-                conn.commit()
-                st.rerun()
+        # EXPORT
+        if export_data:
+            df = pd.DataFrame(export_data)
+            st.download_button(
+                "📥 Export to Excel",
+                df.to_csv(index=False).encode("utf-8"),
+                "orders.csv",
+                "text/csv"
+            )
 
     else:
         st.warning("Wrong password")
@@ -206,7 +182,6 @@ else:
         if st.button(f"Add {p[0]}", key=f"add_{p[0]}"):
             st.session_state.cart.append((p, qty))
 
-    # CART
     st.subheader("Cart")
     total = 0
     order_text = ""
@@ -219,12 +194,10 @@ else:
 
     st.write(f"Total ₹{total}")
 
-    # CUSTOMER DETAILS
     name = st.text_input("Name")
     phone = st.text_input("Phone")
     addr = st.text_area("Address")
 
-    # PLACE ORDER
     if st.button("Place Order"):
 
         order_ids = []
@@ -236,7 +209,6 @@ else:
             """, (name, phone, addr, p[1], q, p[2]*q, "Pending"))
 
             order_ids.append(c.lastrowid)
-
             c.execute("UPDATE products SET stock=? WHERE id=?", (p[3]-q, p[0]))
 
         conn.commit()
@@ -263,7 +235,6 @@ Thank you for shopping with us ❤️
         st.session_state.done = True
         st.session_state.msg = msg
 
-    # AFTER ORDER
     if "done" in st.session_state and st.session_state.done:
 
         msg = st.session_state.msg
