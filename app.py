@@ -1,13 +1,11 @@
 import streamlit as st
 import sqlite3
 import os
-import base64
 import urllib.parse
 import pandas as pd
 import time
 from reportlab.platypus import SimpleDocTemplate, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
-
 
 st.set_page_config(page_title="Sajai Tomay", layout="wide")
 
@@ -38,11 +36,11 @@ CREATE TABLE IF NOT EXISTS orders (
 """)
 
 # SAFE COLUMN ADDITIONS
-for col, query in [
-    ("status", "ALTER TABLE orders ADD COLUMN status TEXT DEFAULT 'Pending'"),
-    ("payment", "ALTER TABLE orders ADD COLUMN payment TEXT DEFAULT 'No'"),
-    ("tracking", "ALTER TABLE orders ADD COLUMN tracking TEXT"),
-    ("payment_ref", "ALTER TABLE orders ADD COLUMN payment_ref TEXT")
+for query in [
+    "ALTER TABLE orders ADD COLUMN status TEXT DEFAULT 'Pending'",
+    "ALTER TABLE orders ADD COLUMN payment TEXT DEFAULT 'No'",
+    "ALTER TABLE orders ADD COLUMN tracking TEXT",
+    "ALTER TABLE orders ADD COLUMN payment_ref TEXT"
 ]:
     try:
         c.execute(query)
@@ -51,8 +49,23 @@ for col, query in [
 
 conn.commit()
 
-# ---------------- UI ----------------
-st.title("🌸 Sajai Tomay")
+# ---------------- HEADER (LOGO + TITLE) ----------------
+col1, col2 = st.columns([1,5])
+
+with col1:
+    if os.path.exists("images/logo.png"):
+        st.image("images/logo.png", width=80)
+
+with col2:
+    st.markdown("""
+    <h1 style='color:#d63384; font-size:40px; margin-bottom:0px;'>
+        🌸 Sajai Tomay
+    </h1>
+    <p style='color:gray; font-size:16px; margin-top:0px;'>
+        Elegant Collection • Simple Ordering
+    </p>
+    """, unsafe_allow_html=True)
+
 mode = st.sidebar.selectbox("Login Type", ["Customer", "Admin"])
 
 # ================= ADMIN =================
@@ -72,28 +85,57 @@ if mode == "Admin":
             st.session_state.last_refresh = time.time()
             st.rerun()
 
+        # ---------------- ADD PRODUCT ----------------
+        st.subheader("Add Product")
+        name = st.text_input("Name")
+        cost = st.number_input("Cost", 0)
+        stock = st.number_input("Stock", 0)
+        image = st.file_uploader("Image")
+
+        if st.button("Add"):
+            if image:
+                os.makedirs("images", exist_ok=True)
+                path = f"images/{image.name}"
+                with open(path, "wb") as f:
+                    f.write(image.getbuffer())
+
+                c.execute("INSERT INTO products VALUES (NULL,?,?,?,?)",
+                          (name, cost, stock, image.name))
+                conn.commit()
+                st.success("Added")
+
+        # ---------------- PRODUCTS ----------------
+        st.subheader("Products")
+        products = c.execute("SELECT * FROM products").fetchall()
+
+        for p in products:
+            st.write(f"{p[1]} | ₹{p[2]} | Stock {p[3]}")
+
+        # ---------------- STOCK UPDATE ----------------
+        st.subheader("Update Stock")
+        for p in products:
+            new_stock = st.number_input(f"{p[1]}", 0, key=f"s{p[0]}")
+            if st.button(f"Update {p[0]}", key=f"stock_{p[0]}"):
+                c.execute("UPDATE products SET stock=? WHERE id=?", (new_stock, p[0]))
+                conn.commit()
+                st.rerun()
+
+        # ---------------- DELIVERY DASHBOARD ----------------
         st.subheader("Delivery Dashboard")
 
         orders = c.execute("SELECT * FROM orders").fetchall()
         total_sales = 0
         export_data = []
 
-        # HEADER
-        h1, h2, h3, h4, h5, h6, h7, h8, h9 = st.columns(9)
-        h1.write("Order ID")
-        h2.write("Customer")
-        h3.write("Phone")
-        h4.write("Address")
-        h5.write("Product")
-        h6.write("Qty")
-        h7.write("Value")
-        h8.write("Payment")
-        h9.write("Delivery")
+        headers = ["Order ID","Customer","Phone","Address","Product","Qty","Value","Payment","Delivery"]
+        cols = st.columns(len(headers))
+        for col, h in zip(cols, headers):
+            col.write(f"**{h}**")
 
         for o in orders:
             total_sales += o[6]
 
-            c1, c2, c3, c4, c5, c6, c7, c8, c9 = st.columns(9)
+            c1,c2,c3,c4,c5,c6,c7,c8,c9 = st.columns(9)
 
             c1.write(o[0])
             c2.write(o[1])
@@ -103,31 +145,21 @@ if mode == "Admin":
             c6.write(o[5])
             c7.write(o[6])
 
-            payment = c8.selectbox(
-                "", ["Yes", "No"],
-                index=0 if len(o)>8 and o[8]=="Yes" else 1,
-                key=f"pay_{o[0]}"
-            )
+            payment = c8.selectbox("", ["Yes","No"],
+                                   index=0 if len(o)>8 and o[8]=="Yes" else 1,
+                                   key=f"pay_{o[0]}")
 
-            delivery = c9.selectbox(
-                "", ["Pending", "Delivered"],
-                index=0 if o[7]=="Pending" else 1,
-                key=f"del_{o[0]}"
-            )
+            delivery = c9.selectbox("", ["Pending","Delivered"],
+                                    index=0 if o[7]=="Pending" else 1,
+                                    key=f"del_{o[0]}")
 
-            # Payment Ref below row
-            payment_ref = st.text_input(
-                f"Payment Ref {o[0]}",
-                value=o[10] if len(o)>10 and o[10] else "",
-                key=f"ref_{o[0]}"
-            )
+            payment_ref = st.text_input(f"Payment Ref {o[0]}",
+                                       value=o[10] if len(o)>10 and o[10] else "",
+                                       key=f"ref_{o[0]}")
 
-            # SAVE
             if st.button(f"Save {o[0]}", key=f"save_{o[0]}"):
-                c.execute(
-                    "UPDATE orders SET payment=?, status=?, payment_ref=? WHERE id=?",
-                    (payment, delivery, payment_ref, o[0])
-                )
+                c.execute("UPDATE orders SET payment=?, status=?, payment_ref=? WHERE id=?",
+                          (payment, delivery, payment_ref, o[0]))
                 conn.commit()
                 st.rerun()
 
@@ -146,15 +178,12 @@ if mode == "Admin":
 
         st.write(f"### 💰 Total Sales: ₹{total_sales}")
 
-        # EXPORT
         if export_data:
             df = pd.DataFrame(export_data)
-            st.download_button(
-                "📥 Export to Excel",
-                df.to_csv(index=False).encode("utf-8"),
-                "orders.csv",
-                "text/csv"
-            )
+            st.download_button("📥 Export to Excel",
+                               df.to_csv(index=False).encode("utf-8"),
+                               "orders.csv",
+                               "text/csv")
 
     else:
         st.warning("Wrong password")
