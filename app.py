@@ -4,8 +4,13 @@ import os
 import urllib.parse
 import pandas as pd
 import time
+import base64
 from reportlab.platypus import SimpleDocTemplate, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
+
+# ✅ FIX FOR STREAMLIT CLOUD (RUN ONCE)
+if os.path.exists("store.db"):
+    os.remove("store.db")
 
 
 st.set_page_config(page_title="Sajai Tomay", layout="wide")
@@ -42,7 +47,8 @@ for query in [
     "ALTER TABLE orders ADD COLUMN payment TEXT DEFAULT 'No'",
     "ALTER TABLE orders ADD COLUMN tracking TEXT",
     "ALTER TABLE orders ADD COLUMN payment_ref TEXT",
-    "ALTER TABLE orders ADD COLUMN delivery_ref TEXT"
+    "ALTER TABLE orders ADD COLUMN delivery_ref TEXT",
+    "ALTER TABLE orders ADD COLUMN order_date TEXT"
 ]:
     try:
         c.execute(query)
@@ -68,6 +74,23 @@ with col2:
     </p>
     """, unsafe_allow_html=True)
 
+# ---------------- WATERMARK ----------------
+if os.path.exists("images/logo.png"):
+    with open("images/logo.png", "rb") as f:
+        data = base64.b64encode(f.read()).decode()
+
+    st.markdown(f"""
+    <style>
+    .stApp {{
+        background-image: url("data:image/png;base64,{data}");
+        background-repeat: no-repeat;
+        background-position: center;
+        background-size: 300px;
+        opacity: 0.97;
+    }}
+    </style>
+    """, unsafe_allow_html=True)
+
 mode = st.sidebar.selectbox("Login Type", ["Customer", "Admin"])
 
 # ================= ADMIN =================
@@ -87,7 +110,7 @@ if mode == "Admin":
             st.session_state.last_refresh = time.time()
             st.rerun()
 
-        # ---------------- ADD PRODUCT ----------------
+        # ADD PRODUCT
         st.subheader("Add Product")
         name = st.text_input("Name")
         cost = st.number_input("Cost", 0)
@@ -106,14 +129,13 @@ if mode == "Admin":
                 conn.commit()
                 st.success("Added")
 
-        # ---------------- PRODUCTS ----------------
+        # PRODUCTS
         st.subheader("Products")
         products = c.execute("SELECT * FROM products").fetchall()
-
         for p in products:
             st.write(f"{p[1]} | ₹{p[2]} | Stock {p[3]}")
 
-        # ---------------- STOCK UPDATE ----------------
+        # STOCK UPDATE
         st.subheader("Update Stock")
         for p in products:
             new_stock = st.number_input(f"{p[1]}", 0, key=f"s{p[0]}")
@@ -122,14 +144,14 @@ if mode == "Admin":
                 conn.commit()
                 st.rerun()
 
-        # ---------------- DELIVERY DASHBOARD ----------------
+        # DELIVERY DASHBOARD
         st.subheader("Delivery Dashboard")
 
         orders = c.execute("SELECT * FROM orders").fetchall()
         total_sales = 0
         export_data = []
 
-        headers = ["Order ID","Customer","Phone","Address","Product","Qty","Value","Payment","Delivery","Pay Ref","Delivery Ref"]
+        headers = ["Order ID","Date","Customer","Phone","Address","Product","Qty","Value","Payment","Status","Pay Ref","Delivery Ref"]
         cols = st.columns(len(headers))
         for col, h in zip(cols, headers):
             col.write(f"**{h}**")
@@ -137,50 +159,44 @@ if mode == "Admin":
         for o in orders:
             total_sales += o[6]
 
-            c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11 = st.columns(11)
+            c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12 = st.columns(12)
 
             c1.write(o[0])
-            c2.write(o[1])
-            c3.write(o[2])
-            c4.write(o[3])
-            c5.write(o[4])
-            c6.write(o[5])
-            c7.write(o[6])
+            c2.write(o[12] if len(o)>12 else "")
+            c3.write(o[1])
+            c4.write(o[2])
+            c5.write(o[3])
+            c6.write(o[4])
+            c7.write(o[5])
+            c8.write(o[6])
 
-            payment = c8.selectbox(
-                "", ["Yes","No"],
-                index=0 if len(o)>8 and o[8]=="Yes" else 1,
-                key=f"pay_{o[0]}"
-            )
+            payment = c9.selectbox("", ["Yes","No"],
+                                   index=0 if len(o)>8 and o[8]=="Yes" else 1,
+                                   key=f"pay_{o[0]}")
 
-            delivery = c9.selectbox(
-                "", ["Pending","Delivered"],
-                index=0 if o[7]=="Pending" else 1,
-                key=f"del_{o[0]}"
-            )
+            status = c10.selectbox("", ["Pending","Accepted","Cancelled"],
+                                   key=f"status_{o[0]}")
 
-            payment_ref = c10.text_input(
-                "",
-                value=o[10] if len(o)>10 and o[10] else "",
-                key=f"ref_{o[0]}"
-            )
-
-            delivery_ref = c11.text_input(
-                "",
-                value=o[11] if len(o)>11 and o[11] else "",
-                key=f"dref_{o[0]}"
-            )
+            payment_ref = c11.text_input("", value=o[10] if len(o)>10 else "", key=f"ref_{o[0]}")
+            delivery_ref = c12.text_input("", value=o[11] if len(o)>11 else "", key=f"dref_{o[0]}")
 
             if st.button(f"Save {o[0]}", key=f"save_{o[0]}"):
-                c.execute(
-                    "UPDATE orders SET payment=?, status=?, payment_ref=?, delivery_ref=? WHERE id=?",
-                    (payment, delivery, payment_ref, delivery_ref, o[0])
-                )
+
+                if status == "Cancelled":
+                    c.execute("UPDATE products SET stock = stock + ? WHERE name=?", (o[5], o[4]))
+
+                c.execute("""
+                UPDATE orders 
+                SET payment=?, status=?, payment_ref=?, delivery_ref=? 
+                WHERE id=?
+                """, (payment, status, payment_ref, delivery_ref, o[0]))
+
                 conn.commit()
                 st.rerun()
 
             export_data.append({
                 "Order ID": o[0],
+                "Date": o[12] if len(o)>12 else "",
                 "Customer": o[1],
                 "Phone": o[2],
                 "Address": o[3],
@@ -188,7 +204,7 @@ if mode == "Admin":
                 "Qty": o[5],
                 "Value": o[6],
                 "Payment": o[8] if len(o)>8 else "",
-                "Delivery": o[7],
+                "Status": o[7],
                 "Payment Ref": o[10] if len(o)>10 else "",
                 "Delivery Ref": o[11] if len(o)>11 else ""
             })
@@ -197,12 +213,10 @@ if mode == "Admin":
 
         if export_data:
             df = pd.DataFrame(export_data)
-            st.download_button(
-                "📥 Export to Excel",
-                df.to_csv(index=False).encode("utf-8"),
-                "orders.csv",
-                "text/csv"
-            )
+            st.download_button("📥 Export to Excel",
+                               df.to_csv(index=False).encode("utf-8"),
+                               "orders.csv",
+                               "text/csv")
 
     else:
         st.warning("Wrong password")
@@ -245,22 +259,30 @@ else:
 
     if st.button("Place Order"):
 
-        order_ids = []
+        if not name or not phone or not addr:
+            st.error("Please fill all details")
+        elif len(phone) != 10 or not phone.isdigit():
+            st.error("Enter valid 10 digit phone number")
+        elif len(addr) < 6:
+            st.error("Enter full address with PIN code")
+        else:
 
-        for p,q in st.session_state.cart:
-            c.execute("""
-            INSERT INTO orders (customer, phone, address, product, quantity, total, status)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (name, phone, addr, p[1], q, p[2]*q, "Pending"))
+            order_ids = []
 
-            order_ids.append(c.lastrowid)
-            c.execute("UPDATE products SET stock=? WHERE id=?", (p[3]-q, p[0]))
+            for p,q in st.session_state.cart:
+                c.execute("""
+                INSERT INTO orders (customer, phone, address, product, quantity, total, status, order_date)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """, (name, phone, addr, p[1], q, p[2]*q, "Pending", time.strftime("%Y-%m-%d")))
 
-        conn.commit()
+                order_ids.append(c.lastrowid)
+                c.execute("UPDATE products SET stock=? WHERE id=?", (p[3]-q, p[0]))
 
-        order_id = order_ids[-1] if order_ids else "N/A"
+            conn.commit()
 
-        msg = f"""
+            order_id = order_ids[-1] if order_ids else "N/A"
+
+            msg = f"""
 🌸 Sajai Tomay Order 🌸
 
 🆔 Order ID: {order_id}
@@ -277,8 +299,8 @@ else:
 Thank you for shopping with us ❤️
 """
 
-        st.session_state.done = True
-        st.session_state.msg = msg
+            st.session_state.done = True
+            st.session_state.msg = msg
 
     if "done" in st.session_state and st.session_state.done:
 
