@@ -1,4 +1,4 @@
-# ✅ FINAL STABLE VERSION WITH EXTRA FEATURES
+## ✅ FINAL STABLE VERSION WITH EXTRA FEATURES
 
 import streamlit as st
 import sqlite3
@@ -8,10 +8,6 @@ import urllib.parse
 import pandas as pd
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
-
-# ✅ FIX FOR STREAMLIT CLOUD (RUN ONCE)
-if os.path.exists("store.db"):
-    os.remove("store.db")
 
 st.set_page_config(page_title="Sajai Tomay", layout="wide")
 
@@ -29,6 +25,7 @@ CREATE TABLE IF NOT EXISTS products (
 )
 """)
 
+# SAFE TABLE CREATION (FIX FOR EXISTING DB)
 c.execute("""
 CREATE TABLE IF NOT EXISTS orders (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -37,10 +34,15 @@ CREATE TABLE IF NOT EXISTS orders (
     address TEXT,
     product TEXT,
     quantity INTEGER,
-    total INTEGER,
-    status TEXT DEFAULT 'Pending'
+    total INTEGER
 )
 """)
+
+# ADD STATUS COLUMN IF NOT EXISTS (IMPORTANT FIX)
+try:
+    c.execute("ALTER TABLE orders ADD COLUMN status TEXT DEFAULT 'Pending'")
+except:
+    pass
 
 conn.commit()
 
