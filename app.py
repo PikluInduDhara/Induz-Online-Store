@@ -7,6 +7,10 @@ import time
 from reportlab.platypus import SimpleDocTemplate, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
 
+# ✅ FIX FOR STREAMLIT CLOUD (RUN ONCE)
+if os.path.exists("store.db"):
+    os.remove("store.db")
+
 st.set_page_config(page_title="Sajai Tomay", layout="wide")
 
 # ---------------- DATABASE ----------------
@@ -40,7 +44,8 @@ for query in [
     "ALTER TABLE orders ADD COLUMN status TEXT DEFAULT 'Pending'",
     "ALTER TABLE orders ADD COLUMN payment TEXT DEFAULT 'No'",
     "ALTER TABLE orders ADD COLUMN tracking TEXT",
-    "ALTER TABLE orders ADD COLUMN payment_ref TEXT"
+    "ALTER TABLE orders ADD COLUMN payment_ref TEXT",
+    "ALTER TABLE orders ADD COLUMN delivery_ref TEXT"
 ]:
     try:
         c.execute(query)
@@ -49,19 +54,19 @@ for query in [
 
 conn.commit()
 
-# ---------------- HEADER (LOGO + TITLE) ----------------
-col1, col2 = st.columns([1,5])
+# ---------------- HEADER ----------------
+col1, col2 = st.columns([2,6])
 
 with col1:
     if os.path.exists("images/logo.png"):
-        st.image("images/logo.png", width=80)
+        st.image("images/logo.png", width=120)
 
 with col2:
     st.markdown("""
-    <h1 style='color:#d63384; font-size:40px; margin-bottom:0px;'>
+    <h1 style='color:#d63384; font-size:42px; margin-bottom:0px;'>
         🌸 Sajai Tomay
     </h1>
-    <p style='color:gray; font-size:16px; margin-top:0px;'>
+    <p style='color:gray; font-size:18px; margin-top:0px;'>
         Elegant Collection • Simple Ordering
     </p>
     """, unsafe_allow_html=True)
@@ -127,7 +132,7 @@ if mode == "Admin":
         total_sales = 0
         export_data = []
 
-        headers = ["Order ID","Customer","Phone","Address","Product","Qty","Value","Payment","Delivery"]
+        headers = ["Order ID","Customer","Phone","Address","Product","Qty","Value","Payment","Delivery","Pay Ref","Delivery Ref"]
         cols = st.columns(len(headers))
         for col, h in zip(cols, headers):
             col.write(f"**{h}**")
@@ -135,7 +140,7 @@ if mode == "Admin":
         for o in orders:
             total_sales += o[6]
 
-            c1,c2,c3,c4,c5,c6,c7,c8,c9 = st.columns(9)
+            c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11 = st.columns(11)
 
             c1.write(o[0])
             c2.write(o[1])
@@ -145,21 +150,35 @@ if mode == "Admin":
             c6.write(o[5])
             c7.write(o[6])
 
-            payment = c8.selectbox("", ["Yes","No"],
-                                   index=0 if len(o)>8 and o[8]=="Yes" else 1,
-                                   key=f"pay_{o[0]}")
+            payment = c8.selectbox(
+                "", ["Yes","No"],
+                index=0 if len(o)>8 and o[8]=="Yes" else 1,
+                key=f"pay_{o[0]}"
+            )
 
-            delivery = c9.selectbox("", ["Pending","Delivered"],
-                                    index=0 if o[7]=="Pending" else 1,
-                                    key=f"del_{o[0]}")
+            delivery = c9.selectbox(
+                "", ["Pending","Delivered"],
+                index=0 if o[7]=="Pending" else 1,
+                key=f"del_{o[0]}"
+            )
 
-            payment_ref = st.text_input(f"Payment Ref {o[0]}",
-                                       value=o[10] if len(o)>10 and o[10] else "",
-                                       key=f"ref_{o[0]}")
+            payment_ref = c10.text_input(
+                "",
+                value=o[10] if len(o)>10 and o[10] else "",
+                key=f"ref_{o[0]}"
+            )
+
+            delivery_ref = c11.text_input(
+                "",
+                value=o[11] if len(o)>11 and o[11] else "",
+                key=f"dref_{o[0]}"
+            )
 
             if st.button(f"Save {o[0]}", key=f"save_{o[0]}"):
-                c.execute("UPDATE orders SET payment=?, status=?, payment_ref=? WHERE id=?",
-                          (payment, delivery, payment_ref, o[0]))
+                c.execute(
+                    "UPDATE orders SET payment=?, status=?, payment_ref=?, delivery_ref=? WHERE id=?",
+                    (payment, delivery, payment_ref, delivery_ref, o[0])
+                )
                 conn.commit()
                 st.rerun()
 
@@ -173,17 +192,20 @@ if mode == "Admin":
                 "Value": o[6],
                 "Payment": o[8] if len(o)>8 else "",
                 "Delivery": o[7],
-                "Payment Ref": o[10] if len(o)>10 else ""
+                "Payment Ref": o[10] if len(o)>10 else "",
+                "Delivery Ref": o[11] if len(o)>11 else ""
             })
 
         st.write(f"### 💰 Total Sales: ₹{total_sales}")
 
         if export_data:
             df = pd.DataFrame(export_data)
-            st.download_button("📥 Export to Excel",
-                               df.to_csv(index=False).encode("utf-8"),
-                               "orders.csv",
-                               "text/csv")
+            st.download_button(
+                "📥 Export to Excel",
+                df.to_csv(index=False).encode("utf-8"),
+                "orders.csv",
+                "text/csv"
+            )
 
     else:
         st.warning("Wrong password")
