@@ -86,7 +86,7 @@ if mode == "Admin":
 
         st.header("Admin Panel")
 
-        # AUTO REFRESH (SAFE)
+        # AUTO REFRESH
         if "last_refresh" not in st.session_state:
             st.session_state.last_refresh = time.time()
 
@@ -124,7 +124,7 @@ if mode == "Admin":
         st.subheader("Update Stock")
         for p in products:
             new_stock = st.number_input(f"{p[1]}", 0, key=f"s{p[0]}")
-            if st.button(f"Update {p[0]}", key=f"stock_update_{p[0]}"):
+            if st.button(f"Update {p[0]}", key=f"stock_{p[0]}"):
                 c.execute("UPDATE products SET stock=? WHERE id=?", (new_stock, p[0]))
                 conn.commit()
                 st.rerun()
@@ -230,8 +230,11 @@ else:
         order_ids = []
 
         for p,q in st.session_state.cart:
-            c.execute("INSERT INTO orders VALUES (NULL,?,?,?,?,?,?,?)",
-                      (name, phone, addr, p[1], q, p[2]*q, "Pending"))
+            c.execute("""
+            INSERT INTO orders (customer, phone, address, product, quantity, total, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, (name, phone, addr, p[1], q, p[2]*q, "Pending"))
+
             order_ids.append(c.lastrowid)
 
             c.execute("UPDATE products SET stock=? WHERE id=?", (p[3]-q, p[0]))
