@@ -3,9 +3,13 @@ import sqlite3
 import os
 import base64
 import urllib.parse
+import pandas as pd
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
 
+# ✅ FIX FOR STREAMLIT CLOUD (RUN ONCE)
+if os.path.exists("store.db"):
+    os.remove("store.db")
 # ---------------- CONFIG ----------------
 st.set_page_config(page_title="Sajai Tomay", layout="wide")
 
@@ -95,6 +99,7 @@ if mode == "Admin":
                 conn.commit()
 
                 st.success("Product Added ✅")
+                st.rerun()
 
         # -------- PRODUCT LIST --------
         st.subheader("📋 Product List")
@@ -112,19 +117,49 @@ if mode == "Admin":
                     c.execute("DELETE FROM products WHERE id=?", (p[0],))
                     conn.commit()
                     st.success("Deleted")
+                    st.rerun()
 
-        # -------- ORDER HISTORY --------
-        st.subheader("📦 Orders")
+        # -------- STOCK UPDATE --------
+        st.subheader("📦 Update Stock")
+
+        for p in products:
+            col1, col2, col3 = st.columns([3,2,1])
+
+            with col1:
+                st.write(p[1])
+
+            with col2:
+                new_stock = st.number_input(f"New Stock for {p[1]}", 0, key=f"stock_{p[0]}")
+
+            with col3:
+                if st.button(f"Update {p[0]}"):
+                    c.execute("UPDATE products SET stock=? WHERE id=?", (new_stock, p[0]))
+                    conn.commit()
+                    st.success(f"{p[1]} stock updated ✅")
+                    st.rerun()
+
+        # -------- DELIVERY DASHBOARD --------
+        st.subheader("📦 Delivery Dashboard")
 
         orders = c.execute("SELECT * FROM orders").fetchall()
 
-        for o in orders:
-            st.write(f"""
-            👤 {o[1]}  
-            📞 {o[2]}  
-            📍 {o[3]}  
-            🛍 {o[4]} x{o[5]} = ₹{o[6]}
-            """)
+        if orders:
+            data = []
+            for i, o in enumerate(orders, start=1):
+                data.append({
+                    "Sl No": i,
+                    "Customer Name": o[1],
+                    "Phone": o[2],
+                    "Address": o[3],
+                    "Product": o[4],
+                    "Qty": o[5],
+                    "Invoice Value (₹)": o[6]
+                })
+
+            df = pd.DataFrame(data)
+            st.dataframe(df, use_container_width=True)
+        else:
+            st.info("No orders yet")
 
     else:
         st.warning("Enter correct password")
@@ -160,7 +195,7 @@ else:
                 st.session_state.cart.append((p, qty))
                 st.success("Added to cart")
 
-    # ---------------- CART VIEW ----------------
+    # ---------------- CART ----------------
     st.subheader("🛒 Cart")
 
     total = 0
@@ -173,14 +208,13 @@ else:
 
     st.write(f"### Total: ₹{total}")
 
-    # ---------------- CUSTOMER DETAILS ----------------
+    # ---------------- CHECKOUT ----------------
     st.subheader("🧾 Checkout")
 
     customer = st.text_input("Customer Name")
     phone = st.text_input("Phone Number")
     address = st.text_area("Delivery Address")
 
-    # ---------------- PLACE ORDER ----------------
     if st.button("Place Order"):
 
         message = f"""
@@ -209,14 +243,12 @@ Thank you for shopping with us ❤️
 
         st.success("Order Placed ✅")
 
-        # ---------------- WHATSAPP ----------------
         encoded = urllib.parse.quote(message)
 
         st.markdown("### 📲 Send Order to WhatsApp")
         st.markdown(f"[👉 Send to 7003884969](https://wa.me/917003884969?text={encoded})")
         st.markdown(f"[👉 Send to 7980238789](https://wa.me/917980238789?text={encoded})")
 
-        # ---------------- PDF INVOICE ----------------
         pdf_file = "invoice.pdf"
         doc = SimpleDocTemplate(pdf_file)
         styles = getSampleStyleSheet()
@@ -231,7 +263,6 @@ Thank you for shopping with us ❤️
         with open(pdf_file, "rb") as f:
             st.download_button("📄 Download Invoice", f, file_name="invoice.pdf")
 
-        # ---------------- CUSTOMER MESSAGE ----------------
         st.markdown(f"""
         ### 🎉 Order Confirmed!
 
@@ -243,3 +274,4 @@ Thank you for shopping with us ❤️
         """)
 
         st.session_state.cart = []
+        st.rerun()
