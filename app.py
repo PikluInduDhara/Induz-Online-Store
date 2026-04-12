@@ -1,57 +1,31 @@
 import streamlit as st
-import sqlite3
 import os
 import urllib.parse
 import pandas as pd
 import time
 import base64
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
 from reportlab.platypus import SimpleDocTemplate, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
 
-
 st.set_page_config(page_title="Sajai Tomay", layout="wide")
 
-# ---------------- DATABASE ----------------
-conn = sqlite3.connect("store.db", check_same_thread=False)
-c = conn.cursor()
+# ---------------- GOOGLE SHEET DATABASE ----------------
+scope = [
+    "https://spreadsheets.google.com/feeds",
+    "https://www.googleapis.com/auth/drive"
+]
 
-c.execute("""
-CREATE TABLE IF NOT EXISTS products (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT,
-    cost INTEGER,
-    stock INTEGER,
-    image TEXT
+# ✅ FIXED (Using Streamlit Secrets instead of file)
+creds = ServiceAccountCredentials.from_json_keyfile_dict(
+    st.secrets["gcp_service_account"], scope
 )
-""")
+client = gspread.authorize(creds)
 
-c.execute("""
-CREATE TABLE IF NOT EXISTS orders (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    customer TEXT,
-    phone TEXT,
-    address TEXT,
-    product TEXT,
-    quantity INTEGER,
-    total INTEGER
-)
-""")
-
-# SAFE COLUMN ADDITIONS
-for query in [
-    "ALTER TABLE orders ADD COLUMN status TEXT DEFAULT 'Pending'",
-    "ALTER TABLE orders ADD COLUMN payment TEXT DEFAULT 'No'",
-    "ALTER TABLE orders ADD COLUMN tracking TEXT",
-    "ALTER TABLE orders ADD COLUMN payment_ref TEXT",
-    "ALTER TABLE orders ADD COLUMN delivery_ref TEXT",
-    "ALTER TABLE orders ADD COLUMN order_date TEXT"
-]:
-    try:
-        c.execute(query)
-    except:
-        pass
-
-conn.commit()
+sheet = client.open("SajaiTomayDB")
+products_sheet = sheet.worksheet("products")
+orders_sheet = sheet.worksheet("orders")
 
 # ---------------- HEADER ----------------
 col1, col2 = st.columns([2,6])
@@ -98,14 +72,6 @@ if mode == "Admin":
 
         st.header("Admin Panel")
 
-        # AUTO REFRESH
-        if "last_refresh" not in st.session_state:
-            st.session_state.last_refresh = time.time()
-
-        if time.time() - st.session_state.last_refresh > 5:
-            st.session_state.last_refresh = time.time()
-            st.rerun()
-
         # ADD PRODUCT
         st.subheader("Add Product")
         name = st.text_input("Name")
@@ -120,30 +86,30 @@ if mode == "Admin":
                 with open(path, "wb") as f:
                     f.write(image.getbuffer())
 
-                c.execute("INSERT INTO products VALUES (NULL,?,?,?,?)",
-                          (name, cost, stock, image.name))
-                conn.commit()
+                products = products_sheet.get_all_records()
+                products_sheet.append_row([
+                    len(products)+1, name, cost, stock, image.name
+                ])
                 st.success("Added")
 
         # PRODUCTS
         st.subheader("Products")
-        products = c.execute("SELECT * FROM products").fetchall()
+        products = products_sheet.get_all_records()
         for p in products:
-            st.write(f"{p[1]} | ₹{p[2]} | Stock {p[3]}")
+            st.write(f"{p['name']} | ₹{p['cost']} | Stock {p['stock']}")
 
         # STOCK UPDATE
         st.subheader("Update Stock")
-        for p in products:
-            new_stock = st.number_input(f"{p[1]}", 0, key=f"s{p[0]}")
-            if st.button(f"Update {p[0]}", key=f"stock_{p[0]}"):
-                c.execute("UPDATE products SET stock=? WHERE id=?", (new_stock, p[0]))
-                conn.commit()
+        for i, p in enumerate(products, start=2):
+            new_stock = st.number_input(f"{p['name']}", 0, key=f"s{i}")
+            if st.button(f"Update {i}", key=f"stock_{i}"):
+                products_sheet.update_cell(i, 4, new_stock)
                 st.rerun()
 
         # DELIVERY DASHBOARD
         st.subheader("Delivery Dashboard")
 
-        orders = c.execute("SELECT * FROM orders").fetchall()
+        orders = orders_sheet.get_all_records()
         total_sales = 0
         export_data = []
 
@@ -152,58 +118,46 @@ if mode == "Admin":
         for col, h in zip(cols, headers):
             col.write(f"**{h}**")
 
-        for o in orders:
-            total_sales += o[6]
+        for i, o in enumerate(orders, start=2):
+            total_sales += int(o["total"])
 
-            c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12 = st.columns(12)
+            c = st.columns(12)
 
-            c1.write(o[0])
-            c2.write(o[12] if len(o)>12 else "")
-            c3.write(o[1])
-            c4.write(o[2])
-            c5.write(o[3])
-            c6.write(o[4])
-            c7.write(o[5])
-            c8.write(o[6])
+            c[0].write(o["id"])
+            c[1].write(o["order_date"])
+            c[2].write(o["customer"])
+            c[3].write(o["phone"])
+            c[4].write(o["address"])
+            c[5].write(o["product"])
+            c[6].write(o["quantity"])
+            c[7].write(o["total"])
 
-            payment = c9.selectbox("", ["Yes","No"],
-                                   index=0 if len(o)>8 and o[8]=="Yes" else 1,
-                                   key=f"pay_{o[0]}")
+            payment = c[8].selectbox("", ["Yes","No"],
+                                    index=0 if o["payment"]=="Yes" else 1,
+                                    key=f"pay_{i}")
 
-            status = c10.selectbox("", ["Pending","Accepted","Cancelled"],
-                                   key=f"status_{o[0]}")
+            status = c[9].selectbox("", ["Pending","Accepted","Cancelled"],
+                                   key=f"status_{i}")
 
-            payment_ref = c11.text_input("", value=o[10] if len(o)>10 else "", key=f"ref_{o[0]}")
-            delivery_ref = c12.text_input("", value=o[11] if len(o)>11 else "", key=f"dref_{o[0]}")
+            pay_ref = c[10].text_input("", o["payment_ref"], key=f"pref_{i}")
+            del_ref = c[11].text_input("", o["delivery_ref"], key=f"dref_{i}")
 
-            if st.button(f"Save {o[0]}", key=f"save_{o[0]}"):
+            if st.button(f"Save {i}", key=f"save_{i}"):
 
                 if status == "Cancelled":
-                    c.execute("UPDATE products SET stock = stock + ? WHERE name=?", (o[5], o[4]))
+                    for j, p in enumerate(products, start=2):
+                        if p["name"] == o["product"]:
+                            new_stock = int(p["stock"]) + int(o["quantity"])
+                            products_sheet.update_cell(j, 4, new_stock)
 
-                c.execute("""
-                UPDATE orders 
-                SET payment=?, status=?, payment_ref=?, delivery_ref=? 
-                WHERE id=?
-                """, (payment, status, payment_ref, delivery_ref, o[0]))
+                orders_sheet.update_cell(i, 9, payment)
+                orders_sheet.update_cell(i, 8, status)
+                orders_sheet.update_cell(i, 10, pay_ref)
+                orders_sheet.update_cell(i, 11, del_ref)
 
-                conn.commit()
                 st.rerun()
 
-            export_data.append({
-                "Order ID": o[0],
-                "Date": o[12] if len(o)>12 else "",
-                "Customer": o[1],
-                "Phone": o[2],
-                "Address": o[3],
-                "Product": o[4],
-                "Qty": o[5],
-                "Value": o[6],
-                "Payment": o[8] if len(o)>8 else "",
-                "Status": o[7],
-                "Payment Ref": o[10] if len(o)>10 else "",
-                "Delivery Ref": o[11] if len(o)>11 else ""
-            })
+            export_data.append(o)
 
         st.write(f"### 💰 Total Sales: ₹{total_sales}")
 
@@ -221,31 +175,29 @@ if mode == "Admin":
 else:
 
     st.subheader("Products")
-    products = c.execute("SELECT * FROM products").fetchall()
+    products = products_sheet.get_all_records()
 
     if "cart" not in st.session_state:
         st.session_state.cart = []
 
     for p in products:
-        img_path = f"images/{p[4]}"
+        img_path = f"images/{p['image']}"
         if os.path.exists(img_path):
             st.image(img_path, width=200)
 
-        st.write(f"{p[1]} ₹{p[2]} Stock {p[3]}")
-        qty = st.number_input(f"Qty {p[0]}", 1, int(p[3]), key=f"q{p[0]}")
+        st.write(f"{p['name']} ₹{p['cost']} Stock {p['stock']}")
+        qty = st.number_input(f"Qty {p['id']}", 1, int(p['stock']), key=f"q{p['id']}")
 
-        if st.button(f"Add {p[0]}", key=f"add_{p[0]}"):
+        if st.button(f"Add {p['id']}", key=f"add_{p['id']}"):
             st.session_state.cart.append((p, qty))
 
     st.subheader("Cart")
     total = 0
-    order_text = ""
 
     for p, q in st.session_state.cart:
-        item_total = p[2] * q
+        item_total = int(p['cost']) * q
         total += item_total
-        order_text += f"{p[1]} x {q} = ₹{item_total}\n"
-        st.write(f"{p[1]} x {q} = ₹{item_total}")
+        st.write(f"{p['name']} x {q} = ₹{item_total}")
 
     st.write(f"Total ₹{total}")
 
@@ -263,60 +215,14 @@ else:
             st.error("Enter full address with PIN code")
         else:
 
-            order_ids = []
+            orders = orders_sheet.get_all_records()
 
             for p,q in st.session_state.cart:
-                c.execute("""
-                INSERT INTO orders (customer, phone, address, product, quantity, total, status, order_date)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                """, (name, phone, addr, p[1], q, p[2]*q, "Pending", time.strftime("%Y-%m-%d")))
+                orders_sheet.append_row([
+                    len(orders)+1,
+                    name, phone, addr,
+                    p["name"], q, int(p["cost"])*q,
+                    "Pending", "No", "", "", time.strftime("%Y-%m-%d")
+                ])
 
-                order_ids.append(c.lastrowid)
-                c.execute("UPDATE products SET stock=? WHERE id=?", (p[3]-q, p[0]))
-
-            conn.commit()
-
-            order_id = order_ids[-1] if order_ids else "N/A"
-
-            msg = f"""
-🌸 Sajai Tomay Order 🌸
-
-🆔 Order ID: {order_id}
-
-👤 Name: {name}
-📞 Phone: {phone}
-📍 Address: {addr}
-
-🛍 Items:
-{order_text}
-
-💰 Total: ₹{total}
-
-Thank you for shopping with us ❤️
-"""
-
-            st.session_state.done = True
-            st.session_state.msg = msg
-
-    if "done" in st.session_state and st.session_state.done:
-
-        msg = st.session_state.msg
-        encoded = urllib.parse.quote(msg)
-
-        st.success("Order placed")
-        st.toast("🆕 New Order Ready to Send!", icon="🔔")
-
-        st.markdown(f"[📩 Send Order](https://wa.me/917003884969?text={encoded})")
-
-        pdf = "invoice.pdf"
-        doc = SimpleDocTemplate(pdf)
-        styles = getSampleStyleSheet()
-        doc.build([Paragraph(msg, styles["Normal"])])
-
-        with open(pdf, "rb") as f:
-            st.download_button("Download Invoice", f)
-
-        if st.button("Next Order"):
-            st.session_state.cart = []
-            st.session_state.done = False
-            st.rerun()
+            st.success("Order placed")
