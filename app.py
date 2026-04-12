@@ -50,23 +50,35 @@ if mode == "Admin":
 
         st.header("Admin Panel")
 
-        # -------- ADD PRODUCT --------
+        # -------- ADD PRODUCT (FIXED SIMPLE) --------
         st.subheader("➕ Add Product")
 
         new_name = st.text_input("Product Name")
         new_price = st.text_input("Price")
         new_stock = st.number_input("Stock", 0, 1000)
-        new_image = st.text_input("Image filename (example: saree.png)")
+
+        uploaded_file = st.file_uploader("Upload Product Image", type=["png","jpg","jpeg"])
 
         if st.button("Add Product"):
+
             if new_name and new_price:
+
+                image_name = ""
+
+                if uploaded_file is not None:
+                    image_name = uploaded_file.name
+                    os.makedirs("images", exist_ok=True)
+                    with open(os.path.join("images", image_name), "wb") as f:
+                        f.write(uploaded_file.getbuffer())
+
                 products_sheet.append_row([
                     len(products_sheet.get_all_records())+1,
                     new_name,
                     new_price,
                     new_stock,
-                    new_image
+                    image_name
                 ])
+
                 st.success("Product Added")
                 st.rerun()
 
