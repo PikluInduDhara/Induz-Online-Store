@@ -27,14 +27,17 @@ products_sheet = sheet.worksheet("products")
 orders_sheet = sheet.worksheet("orders")
 
 # ---------------- HEADER ----------------
-col1, col2 = st.columns([2,6])
+col1, col2 = st.columns([3,5])
 
 with col1:
     if os.path.exists("images/logo.png"):
-        st.image("images/logo.png", width=120)
+        st.image("images/logo.png", width=220)  # 🔥 bigger logo
 
 with col2:
-    st.markdown("<h1 style='color:#d63384;'>🌸 Sajai Tomay</h1>", unsafe_allow_html=True)
+    st.markdown(
+        "<h1 style='color:#d63384; font-size:42px; margin-top:30px;'>🌸 Sajai Tomay</h1>",
+        unsafe_allow_html=True
+    )
 
 mode = st.sidebar.selectbox("Login Type", ["Customer", "Admin"])
 
