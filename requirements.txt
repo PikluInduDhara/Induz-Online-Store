@@ -3,3 +3,5 @@ pandas
 openpyxl
 reportlab
 supabase
+gspread
+oauth2client
