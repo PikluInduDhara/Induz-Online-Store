@@ -31,7 +31,7 @@ col1, col2 = st.columns([3,5])
 
 with col1:
     if os.path.exists("images/logo.png"):
-        st.image("images/logo.png", width=220)  # 🔥 bigger logo
+        st.image("images/logo.png", width=220)
 
 with col2:
     st.markdown(
@@ -50,6 +50,27 @@ if mode == "Admin":
 
         st.header("Admin Panel")
 
+        # -------- ADD PRODUCT --------
+        st.subheader("➕ Add Product")
+
+        new_name = st.text_input("Product Name")
+        new_price = st.text_input("Price")
+        new_stock = st.number_input("Stock", 0, 1000)
+        new_image = st.text_input("Image filename (example: saree.png)")
+
+        if st.button("Add Product"):
+            if new_name and new_price:
+                products_sheet.append_row([
+                    len(products_sheet.get_all_records())+1,
+                    new_name,
+                    new_price,
+                    new_stock,
+                    new_image
+                ])
+                st.success("Product Added")
+                st.rerun()
+
+        # -------- PRODUCTS --------
         st.subheader("Products")
         products = products_sheet.get_all_records()
 
@@ -57,24 +78,29 @@ if mode == "Admin":
 
             col1, col2, col3, col4 = st.columns([3,2,2,2])
 
+            img_path = f"images/{p.get('image','')}"
+            if os.path.exists(img_path):
+                col1.image(img_path, width=80)
+
             col1.write(f"{p['name']} ₹{p['cost']}")
 
             new_stock = col2.number_input("Stock", value=int(p["stock"]), key=f"s{i}")
 
             if col3.button("Update", key=f"u{i}"):
                 products_sheet.update_cell(i, 4, new_stock)
-                st.cache_data.clear()  # ✅ NEW
+                st.cache_data.clear()
                 st.rerun()
 
             if col4.button("Delete", key=f"d{i}"):
                 products_sheet.delete_rows(i)
-                st.cache_data.clear()  # ✅ NEW
+                st.cache_data.clear()
                 st.rerun()
 
         if st.button("🔄 Refresh"):
-            st.cache_data.clear()  # ✅ NEW
+            st.cache_data.clear()
             st.rerun()
 
+        # -------- DELIVERY DASHBOARD --------
         st.subheader("Delivery Dashboard")
 
         orders = orders_sheet.get_all_records()
@@ -124,7 +150,7 @@ if mode == "Admin":
                 orders_sheet.update_cell(i, 11, del_ref)
                 orders_sheet.update_cell(i, 8, status)
 
-                st.cache_data.clear()  # ✅ NEW
+                st.cache_data.clear()
                 st.success("Updated")
                 st.rerun()
 
@@ -157,16 +183,25 @@ else:
         if st.button(f"Add {p['id']}"):
             st.session_state.cart.append((p, qty))
 
+    # -------- CART --------
     st.subheader("Cart")
 
     total = 0
     order_text = ""
 
-    for p, q in st.session_state.cart:
+    for idx, (p, q) in enumerate(st.session_state.cart):
+
+        col1, col2 = st.columns([4,1])
+
         item_total = int(p['cost']) * q
         total += item_total
         order_text += f"{p['name']} x {q} = ₹{item_total}\n"
-        st.write(f"{p['name']} x {q} = ₹{item_total}")
+
+        col1.write(f"{p['name']} x {q} = ₹{item_total}")
+
+        if col2.button("❌", key=f"rem{idx}"):
+            st.session_state.cart.pop(idx)
+            st.rerun()
 
     st.write(f"Total ₹{total}")
 
@@ -205,7 +240,7 @@ else:
                         new_stock = max(0, int(prod["stock"]) - q)
                         products_sheet.update_cell(i, 4, new_stock)
 
-            st.cache_data.clear()  # ✅ NEW (CRITICAL)
+            st.cache_data.clear()
 
             message = f"""
 🌸 Sajai Tomay Order 🌸
@@ -226,7 +261,7 @@ else:
             st.session_state.order_message = message
             st.session_state.cart = []
 
-            st.rerun()  # ✅ NEW
+            st.rerun()
 
     if st.session_state.order_done:
 
