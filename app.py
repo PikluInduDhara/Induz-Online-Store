@@ -34,9 +34,7 @@ with col1:
         st.image("images/logo.png", width=120)
 
 with col2:
-    st.markdown("""
-    <h1 style='color:#d63384;'>🌸 Sajai Tomay</h1>
-    """, unsafe_allow_html=True)
+    st.markdown("<h1 style='color:#d63384;'>🌸 Sajai Tomay</h1>", unsafe_allow_html=True)
 
 mode = st.sidebar.selectbox("Login Type", ["Customer", "Admin"])
 
@@ -49,29 +47,8 @@ if mode == "Admin":
 
         st.header("Admin Panel")
 
-        # -------- ADD PRODUCT --------
-        st.subheader("Add Product")
-        name = st.text_input("Name")
-        cost = st.number_input("Cost", 0)
-        stock = st.number_input("Stock", 0)
-        image = st.file_uploader("Image")
-
-        if st.button("Add"):
-            if image:
-                os.makedirs("images", exist_ok=True)
-                path = f"images/{image.name}"
-                with open(path, "wb") as f:
-                    f.write(image.getbuffer())
-
-                products = products_sheet.get_all_records()
-                products_sheet.append_row([
-                    len(products)+1, name, cost, stock, image.name
-                ])
-                st.success("Added")
-
-        # -------- PRODUCTS (INLINE CONTROL) --------
+        # -------- PRODUCTS --------
         st.subheader("Products")
-
         products = products_sheet.get_all_records()
 
         for i, p in enumerate(products, start=2):
@@ -80,9 +57,7 @@ if mode == "Admin":
 
             col1.write(f"{p['name']} ₹{p['cost']}")
 
-            new_stock = col2.number_input(
-                "Stock", value=int(p["stock"]), key=f"s{i}"
-            )
+            new_stock = col2.number_input("Stock", value=int(p["stock"]), key=f"s{i}")
 
             if col3.button("Update", key=f"u{i}"):
                 products_sheet.update_cell(i, 4, new_stock)
@@ -92,7 +67,6 @@ if mode == "Admin":
                 products_sheet.delete_rows(i)
                 st.rerun()
 
-        # -------- REFRESH --------
         if st.button("🔄 Refresh"):
             st.rerun()
 
@@ -102,7 +76,7 @@ if mode == "Admin":
         orders = orders_sheet.get_all_records()
         total_sales = 0
 
-        headers = ["ID","Date","Customer","Phone","Product","Qty","Value","Payment","Status"]
+        headers = ["ID","Date","Customer","Phone","Address","Product","Qty","Value","Payment","Pay Ref","Del Ref","Status"]
         cols = st.columns(len(headers))
 
         for col, h in zip(cols, headers):
@@ -118,33 +92,36 @@ if mode == "Admin":
             c[1].write(o["order_date"])
             c[2].write(o["customer"])
             c[3].write(o["phone"])
-            c[4].write(o["product"])
-            c[5].write(o["quantity"])
-            c[6].write(o["total"])
+            c[4].write(o["address"])
+            c[5].write(o["product"])
+            c[6].write(o["quantity"])
+            c[7].write(o["total"])
 
-            payment = c[7].selectbox(
-                "", ["Yes","No"],
-                index=0 if o["payment"]=="Yes" else 1,
-                key=f"pay{i}"
-            )
+            payment = c[8].selectbox("", ["Yes","No"],
+                index=0 if o["payment"]=="Yes" else 1, key=f"pay{i}")
 
-            status = c[8].selectbox(
-                "", ["Pending","Accepted","Cancelled"],
-                key=f"status{i}"
-            )
+            pay_ref = c[9].text_input("", value=o.get("payment_ref",""), key=f"pref{i}")
+            del_ref = c[10].text_input("", value=o.get("delivery_ref",""), key=f"dref{i}")
+
+            status = c[11].selectbox("", ["Pending","Accepted","Cancelled"], key=f"status{i}")
 
             if st.button(f"Save {i}"):
 
-                # STOCK RETURN IF CANCELLED
+                # 🔥 reload latest products
+                products_latest = products_sheet.get_all_records()
+
                 if status == "Cancelled":
-                    for j, p in enumerate(products, start=2):
+                    for j, p in enumerate(products_latest, start=2):
                         if p["name"] == o["product"]:
                             new_stock = int(p["stock"]) + int(o["quantity"])
                             products_sheet.update_cell(j, 4, new_stock)
 
                 orders_sheet.update_cell(i, 9, payment)
+                orders_sheet.update_cell(i, 10, pay_ref)
+                orders_sheet.update_cell(i, 11, del_ref)
                 orders_sheet.update_cell(i, 8, status)
 
+                st.success("Updated")
                 st.rerun()
 
         st.write(f"### 💰 Total Sales: ₹{total_sales}")
@@ -153,7 +130,6 @@ if mode == "Admin":
 else:
 
     st.subheader("Products")
-
     products = products_sheet.get_all_records()
 
     if "cart" not in st.session_state:
@@ -161,15 +137,13 @@ else:
 
     for p in products:
 
-        img_path = f"images/{p['image']}"
+        img_path = f"images/{p.get('image','')}"
         if os.path.exists(img_path):
             st.image(img_path, width=200)
 
         st.write(f"{p['name']} ₹{p['cost']} Stock {p['stock']}")
 
-        qty = st.number_input(
-            f"Qty {p['id']}", 1, int(p['stock']), key=f"q{p['id']}"
-        )
+        qty = st.number_input(f"Qty {p['id']}", 1, int(p['stock']), key=f"q{p['id']}")
 
         if st.button(f"Add {p['id']}"):
             st.session_state.cart.append((p, qty))
@@ -192,7 +166,6 @@ else:
     phone = st.text_input("Phone")
     addr = st.text_area("Address")
 
-    # -------- PLACE ORDER --------
     if st.button("Place Order"):
 
         if not name or not phone or not addr:
@@ -217,13 +190,14 @@ else:
                     "Pending", "No", "", "", time.strftime("%Y-%m-%d")
                 ])
 
-                # STOCK REDUCE
-                for i, prod in enumerate(products, start=2):
+                # 🔥 reload products before updating
+                products_latest = products_sheet.get_all_records()
+
+                for i, prod in enumerate(products_latest, start=2):
                     if prod["name"] == p["name"]:
                         new_stock = int(prod["stock"]) - q
                         products_sheet.update_cell(i, 4, new_stock)
 
-            # -------- WHATSAPP --------
             message = f"""
 🌸 Sajai Tomay Order 🌸
 
@@ -244,7 +218,6 @@ else:
             st.success("Order placed")
             st.markdown(f"[📲 Send to Admin]({url})")
 
-            # -------- INVOICE --------
             doc = SimpleDocTemplate("invoice.pdf")
             styles = getSampleStyleSheet()
 
