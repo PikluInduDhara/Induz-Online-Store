@@ -47,7 +47,6 @@ if mode == "Admin":
 
         st.header("Admin Panel")
 
-        # -------- PRODUCTS --------
         st.subheader("Products")
         products = products_sheet.get_all_records()
 
@@ -61,16 +60,18 @@ if mode == "Admin":
 
             if col3.button("Update", key=f"u{i}"):
                 products_sheet.update_cell(i, 4, new_stock)
+                st.cache_data.clear()  # ✅ NEW
                 st.rerun()
 
             if col4.button("Delete", key=f"d{i}"):
                 products_sheet.delete_rows(i)
+                st.cache_data.clear()  # ✅ NEW
                 st.rerun()
 
         if st.button("🔄 Refresh"):
+            st.cache_data.clear()  # ✅ NEW
             st.rerun()
 
-        # -------- DELIVERY DASHBOARD --------
         st.subheader("Delivery Dashboard")
 
         orders = orders_sheet.get_all_records()
@@ -120,6 +121,7 @@ if mode == "Admin":
                 orders_sheet.update_cell(i, 11, del_ref)
                 orders_sheet.update_cell(i, 8, status)
 
+                st.cache_data.clear()  # ✅ NEW
                 st.success("Updated")
                 st.rerun()
 
@@ -152,7 +154,6 @@ else:
         if st.button(f"Add {p['id']}"):
             st.session_state.cart.append((p, qty))
 
-    # -------- CART --------
     st.subheader("Cart")
 
     total = 0
@@ -201,6 +202,8 @@ else:
                         new_stock = max(0, int(prod["stock"]) - q)
                         products_sheet.update_cell(i, 4, new_stock)
 
+            st.cache_data.clear()  # ✅ NEW (CRITICAL)
+
             message = f"""
 🌸 Sajai Tomay Order 🌸
 
@@ -220,7 +223,8 @@ else:
             st.session_state.order_message = message
             st.session_state.cart = []
 
-    # -------- SHOW AFTER ORDER --------
+            st.rerun()  # ✅ NEW
+
     if st.session_state.order_done:
 
         message = st.session_state.order_message
