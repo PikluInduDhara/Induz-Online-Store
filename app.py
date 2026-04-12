@@ -107,7 +107,6 @@ if mode == "Admin":
 
             if st.button(f"Save {i}"):
 
-                # 🔥 reload latest products
                 products_latest = products_sheet.get_all_records()
 
                 if status == "Cancelled":
@@ -130,7 +129,10 @@ if mode == "Admin":
 else:
 
     st.subheader("Products")
+
+    # 🔥 FORCE FRESH LOAD
     products = products_sheet.get_all_records()
+    products = pd.DataFrame(products).to_dict("records")
 
     if "cart" not in st.session_state:
         st.session_state.cart = []
@@ -190,12 +192,12 @@ else:
                     "Pending", "No", "", "", time.strftime("%Y-%m-%d")
                 ])
 
-                # 🔥 reload products before updating
+                # 🔥 STOCK UPDATE FIX
                 products_latest = products_sheet.get_all_records()
 
                 for i, prod in enumerate(products_latest, start=2):
                     if prod["name"] == p["name"]:
-                        new_stock = int(prod["stock"]) - q
+                        new_stock = max(0, int(prod["stock"]) - q)
                         products_sheet.update_cell(i, 4, new_stock)
 
             message = f"""
@@ -229,4 +231,6 @@ else:
             with open("invoice.pdf", "rb") as f:
                 st.download_button("📄 Download Invoice", f, "invoice.pdf")
 
+            # 🔥 FINAL FIX
             st.session_state.cart = []
+            st.rerun()
