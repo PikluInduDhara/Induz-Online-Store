@@ -130,12 +130,14 @@ else:
 
     st.subheader("Products")
 
-    # 🔥 FORCE FRESH LOAD
     products = products_sheet.get_all_records()
     products = pd.DataFrame(products).to_dict("records")
 
     if "cart" not in st.session_state:
         st.session_state.cart = []
+
+    if "order_done" not in st.session_state:
+        st.session_state.order_done = False
 
     for p in products:
 
@@ -192,7 +194,6 @@ else:
                     "Pending", "No", "", "", time.strftime("%Y-%m-%d")
                 ])
 
-                # 🔥 STOCK UPDATE FIX
                 products_latest = products_sheet.get_all_records()
 
                 for i, prod in enumerate(products_latest, start=2):
@@ -215,22 +216,30 @@ else:
 💰 Total: ₹{total}
 """
 
-            url = "https://wa.me/917003884969?text=" + urllib.parse.quote(message)
-
-            st.success("Order placed")
-            st.markdown(f"[📲 Send to Admin]({url})")
-
-            doc = SimpleDocTemplate("invoice.pdf")
-            styles = getSampleStyleSheet()
-
-            doc.build([
-                Paragraph("Invoice", styles["Title"]),
-                Paragraph(message, styles["Normal"])
-            ])
-
-            with open("invoice.pdf", "rb") as f:
-                st.download_button("📄 Download Invoice", f, "invoice.pdf")
-
-            # 🔥 FINAL FIX
+            st.session_state.order_done = True
+            st.session_state.order_message = message
             st.session_state.cart = []
+
+    # -------- SHOW AFTER ORDER --------
+    if st.session_state.order_done:
+
+        message = st.session_state.order_message
+        url = "https://wa.me/917003884969?text=" + urllib.parse.quote(message)
+
+        st.success("Order placed successfully!")
+        st.markdown(f"[📲 Send Order to Admin]({url})")
+
+        doc = SimpleDocTemplate("invoice.pdf")
+        styles = getSampleStyleSheet()
+
+        doc.build([
+            Paragraph("Invoice", styles["Title"]),
+            Paragraph(message, styles["Normal"])
+        ])
+
+        with open("invoice.pdf", "rb") as f:
+            st.download_button("📄 Download Invoice", f, "invoice.pdf")
+
+        if st.button("🛒 Next Order"):
+            st.session_state.order_done = False
             st.rerun()
