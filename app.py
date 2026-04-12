@@ -50,7 +50,7 @@ if mode == "Admin":
 
         st.header("Admin Panel")
 
-        # -------- ADD PRODUCT (FIXED SIMPLE) --------
+        # -------- ADD PRODUCT --------
         st.subheader("➕ Add Product")
 
         new_name = st.text_input("Product Name")
@@ -145,13 +145,18 @@ if mode == "Admin":
             pay_ref = c[9].text_input("", value=o.get("payment_ref",""), key=f"pref{i}")
             del_ref = c[10].text_input("", value=o.get("delivery_ref",""), key=f"dref{i}")
 
-            status = c[11].selectbox("", ["Pending","Accepted","Cancelled"], key=f"status{i}")
+            # ✅ FIX 1: LOCK IF CANCELLED
+            if o["status"] == "Cancelled":
+                status = c[11].selectbox("", ["Cancelled"], key=f"status{i}")
+            else:
+                status = c[11].selectbox("", ["Pending","Accepted","Cancelled"], key=f"status{i}")
 
             if st.button(f"Save {i}"):
 
                 products_latest = products_sheet.get_all_records()
 
-                if status == "Cancelled":
+                # ✅ FIX 1: ONLY FIRST TIME CANCEL
+                if status == "Cancelled" and o["status"] != "Cancelled":
                     for j, p in enumerate(products_latest, start=2):
                         if p["name"] == o["product"]:
                             new_stock = int(p["stock"]) + int(o["quantity"])
@@ -162,8 +167,8 @@ if mode == "Admin":
                 orders_sheet.update_cell(i, 11, del_ref)
                 orders_sheet.update_cell(i, 8, status)
 
+                # ✅ FIX 2: REFRESH
                 st.cache_data.clear()
-                st.success("Updated")
                 st.rerun()
 
         st.write(f"### 💰 Total Sales: ₹{total_sales}")
