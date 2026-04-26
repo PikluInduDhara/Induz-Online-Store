@@ -223,7 +223,7 @@ else:
         for i, img in enumerate(images):
             img_path = f"images/{img.strip()}"
             if os.path.exists(img_path):
-                img_cols[i].image(img_path, width=140)
+                img_cols = st.columns(min(len(images), 4))
          
         st.write(f"{p['name']} ₹{p['cost']} Stock {p['stock']}")
 
