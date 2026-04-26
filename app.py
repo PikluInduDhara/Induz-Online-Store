@@ -56,6 +56,7 @@ if mode == "Admin":
         new_name = st.text_input("Product Name")
         new_price = st.text_input("Price")
         new_stock = st.number_input("Stock", 0, 1000)
+        new_category = st.text_input("Category (optional)")
 
         uploaded_file = st.file_uploader("Upload Product Image", type=["png","jpg","jpeg"])
 
@@ -77,6 +78,7 @@ if mode == "Admin":
                     new_price,
                     new_stock,
                     image_name
+                    new_category
                 ])
 
                 st.success("Product Added")
@@ -179,6 +181,8 @@ else:
 
     products = products_sheet.get_all_records()
     products = pd.DataFrame(products).to_dict("records")
+    categories = list(set([p.get("category","All") for p in products]))
+    selected_category = st.selectbox("Category", ["All"] + categories)
 
     if "cart" not in st.session_state:
         st.session_state.cart = []
@@ -187,6 +191,9 @@ else:
         st.session_state.order_done = False
 
     for p in products:
+
+        if selected_category != "All" and p.get("category") != selected_category:
+            continue
 
         img_path = f"images/{p.get('image','')}"
         if os.path.exists(img_path):
