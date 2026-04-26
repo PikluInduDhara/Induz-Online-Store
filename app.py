@@ -186,7 +186,7 @@ else:
 
     # 🔥 CATEGORY BUTTONS (VISIBLE LIKE AMAZON)
     categories = list(set([p.get("category","All") for p in products]))
-    selected_category = st.selectbox("Category", ["All"] + categories, horizontal=True)
+    selected_category = st.radio("Category", ["All"] + categories, horizontal=True)
     categories = list(set([p.get("category","All") for p in products]))
     selected_category = st.selectbox("Category", ["All"] + categories)
 
