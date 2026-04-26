@@ -58,29 +58,20 @@ if mode == "Admin":
         new_stock = st.number_input("Stock", 0, 1000)
         new_category = st.text_input("Category (optional)")
 
-        uploaded_files = st.file_uploader(
-                "Upload Product Images",
-                type=["png","jpg","jpeg"],
-                accept_multiple_files=True
-        )
+        uploaded_file = st.file_uploader("Upload Product Image", type=["png","jpg","jpeg"])
 
         if st.button("Add Product"):
 
             if new_name and new_price:
 
-                image_names = []   # ✅ correct variable
+                image_name = ""
 
-                if uploaded_files:
+                if uploaded_file is not None:
+                    image_name = uploaded_file.name
                     os.makedirs("images", exist_ok=True)
+                    with open(os.path.join("images", image_name), "wb") as f:
+                        f.write(uploaded_file.getbuffer())
 
-                    for file in uploaded_files:
-                        filename = file.name
-                        image_names.append(filename)
-
-                        with open(os.path.join("images", filename), "wb") as f:
-                            f.write(file.getbuffer())
-
-                image_name = ",".join(image_names)   # ✅ correct
                 products_sheet.append_row([
                     len(products_sheet.get_all_records())+1,
                     new_name,
@@ -101,14 +92,10 @@ if mode == "Admin":
 
             col1, col2, col3, col4 = st.columns([3,2,2,2])
 
-            images = p.get("image", "").split(",")
-            if images:
-             first_img = images[0].strip()
-             img_path = f"images/{first_img}"
-
+            img_path = f"images/{p.get('image','')}"
             if os.path.exists(img_path):
                 col1.image(img_path, width=80)
-            
+
             col1.write(f"{p['name']} ₹{p['cost']}")
 
             new_stock = col2.number_input("Stock", value=int(p["stock"]), key=f"s{i}")
@@ -200,14 +187,16 @@ else:
     # 🔥 CATEGORY BUTTONS (VISIBLE LIKE AMAZON)
     categories = list(set([p.get("category","All") for p in products]))
     selected_category = st.radio("Category", ["All"] + categories, horizontal=True)
-    
+    categories = list(set([p.get("category","All") for p in products]))
+    selected_category = st.selectbox("Category", ["All"] + categories)
+
     if "cart" not in st.session_state:
         st.session_state.cart = []
 
     if "order_done" not in st.session_state:
         st.session_state.order_done = False
 
-    for idx, p in enumerate(products):
+    for p in products:
 
           # 🔥 CATEGORY FILTER
         if selected_category != "All" and p.get("category") != selected_category:
@@ -216,33 +205,16 @@ else:
         # 🔥 SEARCH FILTER
         if search_text and search_text.lower() not in p["name"].lower():
             continue
-        images = [img.strip() for img in p.get("image", "").split(",") if img.strip()]
+        img_path = f"images/{p.get('image','')}"
+        if os.path.exists(img_path):
+            st.image(img_path, width=200)
 
-        # 🔥 CREATE 2-COLUMN LAYOUT (IMAGE LEFT, DETAILS RIGHT)
-        col1, col2 = st.columns([1, 2])
+        st.write(f"{p['name']} ₹{p['cost']} Stock {p['stock']}")
 
-        with col1:
-            if images:
-                img_path = f"images/{images[0]}"  # show only first image (clean)
-                if os.path.exists(img_path):
-                    st.image(img_path, width=120)
+        qty = st.number_input(f"Qty {p['id']}", 1, int(p['stock']), key=f"q{p['id']}")
 
-        with col2:
-            st.write(f"**{p['name']}**")
-            st.write(f"₹{p['cost']}")
-            st.write(f"Stock: {p['stock']}")
-
-            qty = st.number_input(
-                f"Qty {p['id']}",
-                1,
-                int(p['stock']),
-                key=f"q{p['id']}_{idx}"
-            )
-
-            if st.button(f"Add {p['id']}", key=f"btn_{p['id']}_{idx}"):
-                st.session_state.cart.append((p, qty))
-
-        st.markdown("---")  # spacing between products
+        if st.button(f"Add {p['id']}"):
+            st.session_state.cart.append((p, qty))
 
     # -------- CART --------
     st.subheader("Cart")
