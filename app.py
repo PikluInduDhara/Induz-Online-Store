@@ -198,25 +198,43 @@ else:
 
     for p in products:
 
-          # 🔥 CATEGORY FILTER
-        if selected_category != "All" and p.get("category") != selected_category:
-         continue
+        # 🔥 GRID LAYOUT (2 COLUMNS)
+        cols = st.columns(2)
 
-        # 🔥 SEARCH FILTER
-        if search_text and search_text.lower() not in p["name"].lower():
-            continue
-        img_path = f"images/{p.get('image','')}"
-        if os.path.exists(img_path):
-            st.image(img_path, width=200)
+        for idx, p in enumerate(products):
 
-        st.write(f"{p['name']} ₹{p['cost']} Stock {p['stock']}")
+        # CATEGORY FILTER
+            if selected_category != "All" and p.get("category") != selected_category:
+                continue
 
-        qty = st.number_input(f"Qty {p['id']}", 1, int(p['stock']), key=f"q{p['id']}")
+        # SEARCH FILTER
+            if search_text and search_text.lower() not in p["name"].lower():
+                continue
 
-        if st.button(f"Add {p['id']}"):
-            st.session_state.cart.append((p, qty))
+            col = cols[idx % 2]
 
-    # -------- CART --------
+            with col:
+                st.markdown("----")
+
+                img_path = f"images/{p.get('image','')}"
+                if os.path.exists(img_path):
+                    st.image(img_path, use_container_width=True)
+
+                st.write(f"**{p['name']}**")
+                st.write(f"₹{p['cost']}")
+                st.write(f"Stock: {p['stock']}")
+
+                qty = st.number_input(
+                    f"Qty {p['id']}",
+                    1,
+                    int(p['stock']),
+                    key=f"q{p['id']}"
+                )
+
+                if st.button(f"Add {p['id']}"):
+                    st.session_state.cart.append((p, qty))
+                    
+        # -------- CART --------
     st.subheader("Cart")
 
     total = 0
