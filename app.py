@@ -200,16 +200,14 @@ else:
     # 🔥 CATEGORY BUTTONS (VISIBLE LIKE AMAZON)
     categories = list(set([p.get("category","All") for p in products]))
     selected_category = st.radio("Category", ["All"] + categories, horizontal=True)
-    categories = list(set([p.get("category","All") for p in products]))
-    selected_category = st.selectbox("Category", ["All"] + categories)
-
+    
     if "cart" not in st.session_state:
         st.session_state.cart = []
 
     if "order_done" not in st.session_state:
         st.session_state.order_done = False
 
-    for p in products:
+    for idx, p in enumerate(products):
 
           # 🔥 CATEGORY FILTER
         if selected_category != "All" and p.get("category") != selected_category:
