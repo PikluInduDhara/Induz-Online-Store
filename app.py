@@ -77,7 +77,7 @@ if mode == "Admin":
                     new_name,
                     new_price,
                     new_stock,
-                    image_name
+                    image_name,
                     new_category
                 ])
 
