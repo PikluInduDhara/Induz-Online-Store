@@ -101,10 +101,14 @@ if mode == "Admin":
 
             col1, col2, col3, col4 = st.columns([3,2,2,2])
 
-            img_path = f"images/{p.get('image','')}"
+            images = p.get("image", "").split(",")
+            if images:
+             first_img = images[0].strip()
+             img_path = f"images/{first_img}"
+
             if os.path.exists(img_path):
                 col1.image(img_path, width=80)
-
+            
             col1.write(f"{p['name']} ₹{p['cost']}")
 
             new_stock = col2.number_input("Stock", value=int(p["stock"]), key=f"s{i}")
