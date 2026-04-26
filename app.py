@@ -58,20 +58,29 @@ if mode == "Admin":
         new_stock = st.number_input("Stock", 0, 1000)
         new_category = st.text_input("Category (optional)")
 
-        uploaded_file = st.file_uploader("Upload Product Image", type=["png","jpg","jpeg"])
+        uploaded_files = st.file_uploader(
+            "Upload Product Images",
+            type=["png","jpg","jpeg"],
+            accept_multiple_files=True
+        )
 
         if st.button("Add Product"):
 
             if new_name and new_price:
 
-                image_name = ""
+                image_names = []
 
-                if uploaded_file is not None:
-                    image_name = uploaded_file.name
+                if uploaded_files:
                     os.makedirs("images", exist_ok=True)
-                    with open(os.path.join("images", image_name), "wb") as f:
-                        f.write(uploaded_file.getbuffer())
 
+                    for file in uploaded_files:
+                        filename = file.name
+                        image_names.append(filename)
+
+                        with open(os.path.join("images", filename), "wb") as f:
+                            f.write(file.getbuffer())
+
+                image_name = ",".join(image_names)
                 products_sheet.append_row([
                     len(products_sheet.get_all_records())+1,
                     new_name,
@@ -92,10 +101,11 @@ if mode == "Admin":
 
             col1, col2, col3, col4 = st.columns([3,2,2,2])
 
-            img_path = f"images/{p.get('image','')}"
-            if os.path.exists(img_path):
-                col1.image(img_path, width=80)
-
+            images = [img.strip() for img in p.get("image","").split(",") if img.strip()]
+            if images:
+                img_path = f"images/{images[0]}"
+                if os.path.exists(img_path):
+                    col1.image(img_path, width=80)
             col1.write(f"{p['name']} ₹{p['cost']}")
 
             new_stock = col2.number_input("Stock", value=int(p["stock"]), key=f"s{i}")
@@ -205,10 +215,15 @@ else:
         # 🔥 SEARCH FILTER
         if search_text and search_text.lower() not in p["name"].lower():
             continue
-        img_path = f"images/{p.get('image','')}"
-        if os.path.exists(img_path):
-            st.image(img_path, width=200)
+        images = [img.strip() for img in p.get("image","").split(",") if img.strip()]
+        if images:
+            img_cols = st.columns(min(len(images), 3))
 
+            for i, img in enumerate(images):
+                img_path = f"images/{img}"
+
+                if os.path.exists(img_path):
+                    img_cols[i % 3].image(img_path, width=120)
         st.write(f"{p['name']} ₹{p['cost']} Stock {p['stock']}")
 
         qty = st.number_input(f"Qty {p['id']}", 1, int(p['stock']), key=f"q{p['id']}")
