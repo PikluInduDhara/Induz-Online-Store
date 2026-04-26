@@ -218,13 +218,14 @@ else:
         # 🔥 SEARCH FILTER
         if search_text and search_text.lower() not in p["name"].lower():
             continue
-        images = p.get("image", "").split(",")
-        img_cols = st.columns(len(images),4)
-        for i, img in enumerate(images):
-            img_path = f"images/{img.strip()}"
-            if os.path.exists(img_path):
-                img_cols[i % 4].image(img_path, width=140)
-         
+        images = [img.strip() for img in p.get("image", "").split(",") if img.strip()]
+        if images:
+             img_cols = st.columns(min(len(images), 4))
+             for i, img in enumerate(images):
+                img_path = f"images/{img}"
+                if os.path.exists(img_path):
+                     img_cols[i % 4].image(img_path, width=140) 
+                     
         st.write(f"{p['name']} ₹{p['cost']} Stock {p['stock']}")
 
         qty = st.number_input(f"Qty {p['id']}", 1, int(p['stock']), key=f"q{p['id']}")
