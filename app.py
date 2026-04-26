@@ -58,20 +58,29 @@ if mode == "Admin":
         new_stock = st.number_input("Stock", 0, 1000)
         new_category = st.text_input("Category (optional)")
 
-        uploaded_file = st.file_uploader("Upload Product Image", type=["png","jpg","jpeg"])
+        uploaded_files = st.file_uploader(
+                "Upload Product Images",
+                type=["png","jpg","jpeg"],
+                accept_multiple_files=True
+        )
 
         if st.button("Add Product"):
 
             if new_name and new_price:
 
-                image_name = ""
+                image_names = []   # ✅ correct variable
 
-                if uploaded_file is not None:
-                    image_name = uploaded_file.name
+                if uploaded_files:
                     os.makedirs("images", exist_ok=True)
-                    with open(os.path.join("images", image_name), "wb") as f:
-                        f.write(uploaded_file.getbuffer())
 
+                    for file in uploaded_files:
+                        filename = file.name
+                        image_names.append(filename)
+
+                        with open(os.path.join("images", filename), "wb") as f:
+                            f.write(file.getbuffer())
+
+                image_name = ",".join(image_names)   # ✅ correct
                 products_sheet.append_row([
                     len(products_sheet.get_all_records())+1,
                     new_name,
@@ -205,10 +214,13 @@ else:
         # 🔥 SEARCH FILTER
         if search_text and search_text.lower() not in p["name"].lower():
             continue
-        img_path = f"images/{p.get('image','')}"
-        if os.path.exists(img_path):
-            st.image(img_path, width=200)
-
+        images = p.get("image", "").split(",")
+        img_cols = st.columns(len(images))
+        for i, img in enumerate(images):
+            img_path = f"images/{img.strip()}"
+            if os.path.exists(img_path):
+                img_cols[i].image(img_path, use_container_width=True)
+         
         st.write(f"{p['name']} ₹{p['cost']} Stock {p['stock']}")
 
         qty = st.number_input(f"Qty {p['id']}", 1, int(p['stock']), key=f"q{p['id']}")
