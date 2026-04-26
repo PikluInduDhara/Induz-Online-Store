@@ -219,19 +219,32 @@ else:
         if search_text and search_text.lower() not in p["name"].lower():
             continue
         images = [img.strip() for img in p.get("image", "").split(",") if img.strip()]
-        if images:
-             img_cols = st.columns(min(len(images), 4))
-             for i, img in enumerate(images):
-                img_path = f"images/{img}"
+
+        # 🔥 CREATE 2-COLUMN LAYOUT (IMAGE LEFT, DETAILS RIGHT)
+        col1, col2 = st.columns([1, 2])
+
+        with col1:
+            if images:
+                img_path = f"images/{images[0]}"  # show only first image (clean)
                 if os.path.exists(img_path):
-                     img_cols[i % 4].image(img_path, width=140) 
-                     
-        st.write(f"{p['name']} ₹{p['cost']} Stock {p['stock']}")
+                    st.image(img_path, width=120)
 
-        qty = st.number_input(f"Qty {p['id']}", 1, int(p['stock']), key=f"q{p['id']}")
+        with col2:
+            st.write(f"**{p['name']}**")
+            st.write(f"₹{p['cost']}")
+            st.write(f"Stock: {p['stock']}")
 
-        if st.button(f"Add {p['id']}"):
-            st.session_state.cart.append((p, qty))
+            qty = st.number_input(
+                f"Qty {p['id']}",
+                1,
+                int(p['stock']),
+                key=f"q{p['id']}_{idx}"
+            )
+
+            if st.button(f"Add {p['id']}", key=f"btn_{p['id']}_{idx}"):
+                st.session_state.cart.append((p, qty))
+
+        st.markdown("---")  # spacing between products
 
     # -------- CART --------
     st.subheader("Cart")
