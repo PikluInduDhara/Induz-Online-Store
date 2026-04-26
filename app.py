@@ -181,6 +181,12 @@ else:
 
     products = products_sheet.get_all_records()
     products = pd.DataFrame(products).to_dict("records")
+    # 🔥 SEARCH BAR
+    search_text = st.text_input("🔍 Search Product")
+
+    # 🔥 CATEGORY BUTTONS (VISIBLE LIKE AMAZON)
+    categories = list(set([p.get("category","All") for p in products]))
+    selected_category = st.selectbox("Category", ["All"] + categories, horizontal=True)
     categories = list(set([p.get("category","All") for p in products]))
     selected_category = st.selectbox("Category", ["All"] + categories)
 
@@ -192,9 +198,13 @@ else:
 
     for p in products:
 
+          # 🔥 CATEGORY FILTER
         if selected_category != "All" and p.get("category") != selected_category:
-            continue
+         continue
 
+        # 🔥 SEARCH FILTER
+        if search_text and search_text.lower() not in p["name"].lower():
+            continue
         img_path = f"images/{p.get('image','')}"
         if os.path.exists(img_path):
             st.image(img_path, width=200)
