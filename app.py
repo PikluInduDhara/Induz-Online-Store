@@ -219,11 +219,11 @@ else:
         if search_text and search_text.lower() not in p["name"].lower():
             continue
         images = p.get("image", "").split(",")
-        img_cols = st.columns(len(images))
+        img_cols = st.columns(len(images),4)
         for i, img in enumerate(images):
             img_path = f"images/{img.strip()}"
             if os.path.exists(img_path):
-                img_cols = st.columns(min(len(images), 4))
+                img_cols[i % 4].image(img_path, width=140)
          
         st.write(f"{p['name']} ₹{p['cost']} Stock {p['stock']}")
 
