@@ -10,9 +10,9 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
 def get_image_url(img):
     if "drive.google.com" in img:
-        return img.replace("/view", "/preview")
+        file_id = img.split("/d/")[1].split("/")[0]
+        return f"https://drive.google.com/uc?id={file_id}"
     return img
-
 st.set_page_config(page_title="Sajai Tomay", layout="wide")
 
 # ---------------- GOOGLE SHEET ----------------
@@ -108,8 +108,8 @@ if mode == "Admin":
             images = [img.strip() for img in p.get("image","").split(",") if img.strip()]
             if images:
                 img_cols = st.columns(min(len(images), 3))
-                for i, img in enumerate(images):
-                    st.image(get_image_url(img), use_container_width=True)
+                for j, img in enumerate(images):
+                    img_cols[j % 3].image(get_image_url(img), width=80)
             col1.write(f"{p['name']} ₹{p['cost']}")
 
             new_stock = col2.number_input("Stock", value=int(p["stock"]), key=f"s{i}")
@@ -202,7 +202,6 @@ else:
     categories = list(set([p.get("category","All") for p in products]))
     selected_category = st.radio("Category", ["All"] + categories, horizontal=True)
     categories = list(set([p.get("category","All") for p in products]))
-    selected_category = st.selectbox("Category", ["All"] + categories)
 
     if "cart" not in st.session_state:
         st.session_state.cart = []
