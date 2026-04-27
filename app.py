@@ -230,11 +230,18 @@ else:
                    img_cols[i % 3].image(get_image_url(img), width=120)
         st.write(f"{p['name']} ₹{p['cost']} Stock {p['stock']}")
 
+        stock = int(p.get('stock', 0) or 0)
+
+        if stock <= 0:
+            st.write("❌ Out of Stock")
+            continue
+
         qty = st.number_input(
             f"Qty {p['id']}",
-            1,
-            int(p.get('stock', 0) or 0),
-            key=f"q{p['id']}"
+            min_value=1,
+            max_value=stock,
+            value=1,
+            key=f"q_{p['id']}"
         )
 
         if st.button(f"Add {p['id']}"):
