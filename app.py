@@ -110,9 +110,12 @@ if mode == "Admin":
             col1, col2, col3, col4 = st.columns([3,2,2,2])
 
             images = [img.strip() for img in p.get("image","").split(",") if img.strip()]
+
             if images:
-                for img in images:
-                    col1.image(get_image_url(img), width=80)
+                cols = st.columns(3)   # fixed 3 per row (clean look)
+
+                for i, img in enumerate(images):
+                    cols[i % 3].image(get_image_url(img), width=120)
             col1.write(f"{p['name']} ₹{p['cost']}")
 
             stock_value = int(p.get("stock", 0) or 0)
@@ -274,12 +277,21 @@ else:
             st.rerun()
 
     st.write(f"Total ₹{total}")
-
     name = st.text_input("Name")
     phone = st.text_input("Phone")
+
+    state = st.selectbox(
+        "State",
+        ["West Bengal","Bihar","Jharkhand","Odisha","Assam","UP","Delhi","Other"]
+    )
+
     addr = st.text_area("Address")
 
-    if st.button("Place Order"):
+    if st.button("Place Order"):if st.button("Place Order"):
+
+    if not st.session_state.cart:
+        st.error("⚠️ Please add at least 1 product before placing order")
+        st.stop()
 
         if not name or not phone or not addr:
             st.error("Fill all details")
@@ -298,7 +310,7 @@ else:
 
                 orders_sheet.append_row([
                     order_id,
-                    name, phone, addr,
+                    name, phone, f"{state}, {addr}",
                     p["name"], q, item_total,
                     "Pending", "No", "", "", time.strftime("%Y-%m-%d")
                 ])
