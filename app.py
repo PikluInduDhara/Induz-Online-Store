@@ -114,8 +114,8 @@ if mode == "Admin":
             if images:
                 cols = st.columns(3)   # fixed 3 per row (clean look)
 
-                for i, img in enumerate(images):
-                    cols[i % 3].image(get_image_url(img), width=120)
+                for j, img in enumerate(images):
+                    cols[j % 3].image(get_image_url(img), width=120)
             col1.write(f"{p['name']} ₹{p['cost']}")
 
             stock_value = int(p.get("stock", 0) or 0)
@@ -214,7 +214,6 @@ else:
     # 🔥 CATEGORY BUTTONS (VISIBLE LIKE AMAZON)
     categories = list(set([p.get("category","All") for p in products]))
     selected_category = st.radio("Category", ["All"] + categories, horizontal=True)
-    categories = list(set([p.get("category","All") for p in products]))
 
     if "cart" not in st.session_state:
         st.session_state.cart = []
@@ -224,19 +223,18 @@ else:
 
     for p in products:
 
-          # 🔥 CATEGORY FILTER
+        # 🔥 CATEGORY FILTER
         if selected_category != "All" and p.get("category") != selected_category:
-         continue
+             continue
 
         # 🔥 SEARCH FILTER
         if search_text and search_text.lower() not in p["name"].lower():
             continue
         images = [img.strip() for img in p.get("image","").split(",") if img.strip()]
         if images:
-            img_cols = st.columns(min(len(images), 3))
-
+            cols = st.columns(3)
             for i, img in enumerate(images):
-                   img_cols[i % 3].image(get_image_url(img), width=120)
+                cols[i % 3].image(get_image_url(img), width=120)
         st.write(f"{p['name']} ₹{p['cost']} Stock {p['stock']}")
 
         stock = int(p.get('stock', 0) or 0)
@@ -253,7 +251,7 @@ else:
             key=f"q_{p['id']}"
         )
 
-        if st.button(f"Add {p['id']}"):
+        if st.button(f"Add {p['id']}", key=f"add_{p['id']}"):
             st.session_state.cart.append((p, qty))
 
     # -------- CART --------
@@ -287,63 +285,63 @@ else:
 
     addr = st.text_area("Address")
 
-if st.button("Place Order"):
+    if st.button("Place Order"):
 
-    if not st.session_state.cart:
-        st.error("⚠️ Please add at least 1 product before placing order")
-        st.stop()
+        if not st.session_state.cart:
+            st.error("⚠️ Please add at least 1 product before placing order")
+            st.stop()
 
-    if not name or not phone or not addr:
-        st.error("Fill all details")
+        if not name or not phone or not addr:
+            st.error("Fill all details")
 
-    elif len(phone) != 10:
-        st.error("Invalid phone")
+        elif len(phone) != 10:
+            st.error("Invalid phone")
 
-    else:
+        else:
 
-        orders = orders_sheet.get_all_records()
-        order_id = len(orders) + 1
+            orders = orders_sheet.get_all_records()
+            order_id = len(orders) + 1
 
-        for p, q in st.session_state.cart:
+            for p, q in st.session_state.cart:
 
-            item_total = int(p["cost"]) * q
+                item_total = int(p["cost"]) * q
 
-            orders_sheet.append_row([
-                order_id,
-                name, phone, f"{state}, {addr}",
-                p["name"], q, item_total,
-                "Pending", "No", "", "", time.strftime("%Y-%m-%d")
-            ])
+                orders_sheet.append_row([
+                    order_id,
+                    name, phone, f"{state}, {addr}",
+                    p["name"], q, item_total,
+                    "Pending", "No", "", "", time.strftime("%Y-%m-%d")
+                ])
 
-            products_latest = products_sheet.get_all_records()
+                products_latest = products_sheet.get_all_records()
 
-            for i, prod in enumerate(products_latest, start=2):
-                if prod["name"] == p["name"]:
-                    new_stock = max(0, int(prod["stock"]) - q)
-                    products_sheet.update_cell(i, 4, new_stock)
+                for k, prod in enumerate(products_latest, start=2):
+                    if prod["name"] == p["name"]:
+                        new_stock = max(0, int(prod["stock"]) - q)
+                        products_sheet.update_cell(k, 4, new_stock)
 
-        st.cache_data.clear()
+            st.cache_data.clear()
 
-        message = f"""
-🌸 Sajai Tomay Order 🌸
+            message = f"""
+    🌸 Sajai Tomay Order 🌸
 
-🆔 Order ID: {order_id}
+    🆔 Order ID: {order_id}
 
-👤 Name: {name}
-📞 Phone: {phone}
-📍 Address: {state}, {addr}
+    👤 Name: {name}
+    📞 Phone: {phone}
+    📍 Address: {state}, {addr}
 
-🛒 Items:
-{order_text}
+    🛒 Items:
+    {order_text}
 
-💰 Total: ₹{total}
-"""
+    💰 Total: ₹{total}
+    """
 
-        st.session_state.order_done = True
-        st.session_state.order_message = message
-        st.session_state.cart = []
+            st.session_state.order_done = True
+            st.session_state.order_message = message
+            st.session_state.cart = []
 
-        st.rerun()
+            st.rerun()
 
     if st.session_state.order_done:
 
