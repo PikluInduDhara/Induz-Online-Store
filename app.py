@@ -287,51 +287,51 @@ else:
 
     addr = st.text_area("Address")
 
-    if st.button("Place Order"):if st.button("Place Order"):
+if st.button("Place Order"):
 
     if not st.session_state.cart:
         st.error("⚠️ Please add at least 1 product before placing order")
         st.stop()
 
-        if not name or not phone or not addr:
-            st.error("Fill all details")
+    if not name or not phone or not addr:
+        st.error("Fill all details")
 
-        elif len(phone) != 10:
-            st.error("Invalid phone")
+    elif len(phone) != 10:
+        st.error("Invalid phone")
 
-        else:
+    else:
 
-            orders = orders_sheet.get_all_records()
-            order_id = len(orders) + 1
+        orders = orders_sheet.get_all_records()
+        order_id = len(orders) + 1
 
-            for p, q in st.session_state.cart:
+        for p, q in st.session_state.cart:
 
-                item_total = int(p["cost"]) * q
+            item_total = int(p["cost"]) * q
 
-                orders_sheet.append_row([
-                    order_id,
-                    name, phone, f"{state}, {addr}",
-                    p["name"], q, item_total,
-                    "Pending", "No", "", "", time.strftime("%Y-%m-%d")
-                ])
+            orders_sheet.append_row([
+                order_id,
+                name, phone, f"{state}, {addr}",
+                p["name"], q, item_total,
+                "Pending", "No", "", "", time.strftime("%Y-%m-%d")
+            ])
 
-                products_latest = products_sheet.get_all_records()
+            products_latest = products_sheet.get_all_records()
 
-                for i, prod in enumerate(products_latest, start=2):
-                    if prod["name"] == p["name"]:
-                        new_stock = max(0, int(prod["stock"]) - q)
-                        products_sheet.update_cell(i, 4, new_stock)
+            for i, prod in enumerate(products_latest, start=2):
+                if prod["name"] == p["name"]:
+                    new_stock = max(0, int(prod["stock"]) - q)
+                    products_sheet.update_cell(i, 4, new_stock)
 
-            st.cache_data.clear()
+        st.cache_data.clear()
 
-            message = f"""
+        message = f"""
 🌸 Sajai Tomay Order 🌸
 
 🆔 Order ID: {order_id}
 
 👤 Name: {name}
 📞 Phone: {phone}
-📍 Address: {addr}
+📍 Address: {state}, {addr}
 
 🛒 Items:
 {order_text}
@@ -339,11 +339,11 @@ else:
 💰 Total: ₹{total}
 """
 
-            st.session_state.order_done = True
-            st.session_state.order_message = message
-            st.session_state.cart = []
+        st.session_state.order_done = True
+        st.session_state.order_message = message
+        st.session_state.cart = []
 
-            st.rerun()
+        st.rerun()
 
     if st.session_state.order_done:
 
