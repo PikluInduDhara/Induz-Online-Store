@@ -116,7 +116,14 @@ if mode == "Admin":
                     col1.image(get_image_url(img), width=80)
             col1.write(f"{p['name']} ₹{p['cost']}")
 
-            new_stock = col2.number_input("Stock", value=int(p["stock"]), key=f"s{i}")
+            stock_value = int(p.get("stock", 0) or 0)
+
+            new_stock = col2.number_input(
+                "Stock",
+                min_value=0,
+                value=stock_value,
+                key=f"s_{i}"
+            )
 
             if col3.button("Update", key=f"u{i}"):
                 products_sheet.update_cell(i, 4, new_stock)
