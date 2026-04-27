@@ -13,10 +13,12 @@ def get_image_url(img):
     if "drive.google.com" in img:
         try:
             file_id = img.split("/d/")[1].split("/")[0]
-            return f"https://drive.google.com/uc?export=view&id={file_id}"
+            return f"https://drive.google.com/uc?id={file_id}"
         except:
             return img
-    return img
+    return f"images/{img}"
+
+st.image("https://drive.google.com/uc?id=1KUgSwtnSVE2fsB2R_pnJchU-lWjKbIrB")
 
 st.set_page_config(page_title="Sajai Tomay", layout="wide")
 
@@ -112,9 +114,8 @@ if mode == "Admin":
 
             images = [img.strip() for img in p.get("image","").split(",") if img.strip()]
             if images:
-                img_cols = st.columns(min(len(images), 3))
-                for j, img in enumerate(images):
-                    img_cols[j % 3].image(get_image_url(img), width=80)
+                for img in images:
+                    col1.image(get_image_url(img), width=80)
             col1.write(f"{p['name']} ₹{p['cost']}")
 
             new_stock = col2.number_input("Stock", value=int(p["stock"]), key=f"s{i}")
