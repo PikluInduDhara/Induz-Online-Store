@@ -8,6 +8,10 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from reportlab.platypus import SimpleDocTemplate, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
+def get_image_url(img):
+    if "drive.google.com" in img:
+        return img.replace("/view", "/preview")
+    return img
 
 st.set_page_config(page_title="Sajai Tomay", layout="wide")
 
@@ -103,9 +107,9 @@ if mode == "Admin":
 
             images = [img.strip() for img in p.get("image","").split(",") if img.strip()]
             if images:
-                img_path = f"images/{images[0]}"
-                if os.path.exists(img_path):
-                    col1.image(img_path, width=80)
+                img_cols = st.columns(min(len(images), 3))
+                for i, img in enumerate(images):
+                    st.image(get_image_url(img), use_container_width=True)
             col1.write(f"{p['name']} ₹{p['cost']}")
 
             new_stock = col2.number_input("Stock", value=int(p["stock"]), key=f"s{i}")
@@ -220,10 +224,7 @@ else:
             img_cols = st.columns(min(len(images), 3))
 
             for i, img in enumerate(images):
-                img_path = f"images/{img}"
-
-                if os.path.exists(img_path):
-                    img_cols[i % 3].image(img_path, width=120)
+                   img_cols[i % 3].image(get_image_url(img), width=120)
         st.write(f"{p['name']} ₹{p['cost']} Stock {p['stock']}")
 
         qty = st.number_input(f"Qty {p['id']}", 1, int(p['stock']), key=f"q{p['id']}")
