@@ -18,8 +18,6 @@ def get_image_url(img):
             return img
     return f"images/{img}"
 
-st.image("https://drive.google.com/uc?id=1KUgSwtnSVE2fsB2R_pnJchU-lWjKbIrB")
-
 st.set_page_config(page_title="Sajai Tomay", layout="wide")
 
 # ---------------- GOOGLE SHEET ----------------
@@ -232,7 +230,12 @@ else:
                    img_cols[i % 3].image(get_image_url(img), width=120)
         st.write(f"{p['name']} ₹{p['cost']} Stock {p['stock']}")
 
-        qty = st.number_input(f"Qty {p['id']}", 1, int(p['stock']), key=f"q{p['id']}")
+        qty = st.number_input(
+            f"Qty {p['id']}",
+            1,
+            int(p.get('stock', 0) or 0),
+            key=f"q{p['id']}"
+        )
 
         if st.button(f"Add {p['id']}"):
             st.session_state.cart.append((p, qty))
