@@ -8,11 +8,16 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from reportlab.platypus import SimpleDocTemplate, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
+
 def get_image_url(img):
     if "drive.google.com" in img:
-        file_id = img.split("/d/")[1].split("/")[0]
-        return f"https://drive.google.com/uc?id={file_id}"
+        try:
+            file_id = img.split("/d/")[1].split("/")[0]
+            return f"https://drive.google.com/uc?export=view&id={file_id}"
+        except:
+            return img
     return img
+
 st.set_page_config(page_title="Sajai Tomay", layout="wide")
 
 # ---------------- GOOGLE SHEET ----------------
