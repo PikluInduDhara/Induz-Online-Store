@@ -193,7 +193,7 @@ if mode == "Admin":
                     for j, p in enumerate(products_latest, start=2):
                         if p["name"] == o["product"]:
                             new_stock = int(p["stock"]) + int(o["quantity"])
-                            products_sheet.update_cell(j, 4, new_stock)
+                            products_sheet.update_cell(j, 5, new_stock)
 
                 orders_sheet.update_cell(i, 9, payment)
                 orders_sheet.update_cell(i, 10, pay_ref)
@@ -251,9 +251,11 @@ else:
 
             sizes = str(p.get("size", "") or "")
 
+            sizes = str(p.get("size", "") or "")
+
             if sizes.strip():
                 size_list = [s.strip() for s in sizes.split(",") if s.strip()]
-                
+
                 selected_size = st.selectbox(
                     "Select Size",
                     size_list,
@@ -261,14 +263,6 @@ else:
                 )
             else:
                 selected_size = "Default"
-                selected_size = st.selectbox(
-                        "Select Size",
-                        size_list,
-                        key=f"size_{p['id']}_{p['name']}"
-                    )
-            else:
-                selected_size = "Default"
-
         st.write(f"Stock: {p['stock']}")
 
         stock = int(p.get('stock', 0) or 0)
