@@ -413,15 +413,41 @@ else:
             💰 Total: ₹{total}
 
             -------------------------------------
-            Our team will contact you for further delivery related updates once you make the payment as per WhatsApp confirmation.
-            
-            Return or refund is only applicable if you receive any broken or discolored product
+            ✨ WELCOME TO “SAJAI TOMAY” ❤️
+            This page will serve you your dream jewellery and stylish dresses.. at its best quality and best price with love 💖
+            Our team will contact you for further delivery related updates once you make the payment as per WhatsApp confirmation
 
-            DISPATCH TIME 5-7 DAYS
+            ▪️ ⏳ Expect reply from us within 2–3 business days after dropping the message.
 
-            PLEASE EXPECT DELIVERY WITHIN 10-12 WORKING DAYS🙏♥️
-            HAPPY SHOPPING 
-            ✨SAJAI TOMAY❤️
+            ▪️ 📞 If no reply within 2–3 days, call: 9007893365
+            (After placing the order if you don’t get any reply or confirmation from us within 2–3 business days)
+
+            ◾ 💖 ALL OF US FROM “SAJAI TOMAY” ARE WORKING HARD EVERYDAY TO PROVIDE YOU THE BEST PRODUCT OR SERVICE .
+
+            ◾ RULES & REGULATIONS :–
+            ▪️ This is a complete online boutique.
+            ▪️ We don’t have any shop or outlet.
+            ▪️ ❌ No COD available.
+            ▪️ 💳 Payments only via Google Pay, PhonePe, Paytm & Bank Transfer.
+            ▪️ 🚫 If the payment not made within 2 days order will be cancelled automatically
+            ▪️ 🎥 After receiving parcel, Opening Video is MUST.
+            ❌ Without opening video, no complaints will be accepted.
+            👉 Issue must be clearly visible in the video.
+
+            ▪️ 🌍 We ship worldwide.
+
+            ▪️ 🚚 Shipping charge all over India: ₹60/-
+            Except Tripura & Assam.
+
+            ▪️ 🚚 For Tripura & Assam: ₹80/-
+
+            ▪️ 👗 Shipping charge may change for Kurti or Dresses.
+            🌍 International shipping charges vary by location.
+
+            🎁 Purchase above ₹2000/- & get free gifts from us.
+
+            ▪️ ❌ No refund facility available.
+            ✅ Replacement / Repolish only if product is broken or discolored.
 
             -------------------------------------
 
@@ -439,9 +465,6 @@ else:
             Outside WB → 80 (prepaid)
 
             🚫 COD not available
-
-            📌 For booking:
-            Please take a screenshot and send your full address
 
             🌻 Shipping charges may change for Kurti/Dresses
             """
@@ -557,7 +580,43 @@ else:
 
         # -------- PAYMENT MESSAGE --------
         elements.append(Paragraph(
-            "<b>👉 Our team will contact you further delivery related update once you make the payment as per WhatsApp confirmation.</b>",
+            """
+            <b>👉 ✨ WELCOME TO “SAJAI TOMAY” ❤️<br/><br/>
+
+            This page will serve you your dream jewellery and stylish dresses at best quality and best price with love 💖<br/><br/>
+
+            Our team will contact you for further delivery related updates once you make the payment as per WhatsApp confirmation.<br/><br/>
+
+            ▪️ ⏳ Expect reply within 2–3 business days after dropping the message.<br/><br/>
+
+            ▪️ 📞 If no reply within 2–3 days, call: 9007893365<br/>
+            (After placing the order if you don’t get any reply or confirmation within 2–3 business days)<br/><br/>
+
+            ◾ 💖 ALL OF US FROM “SAJAI TOMAY” ARE WORKING HARD EVERYDAY TO PROVIDE YOU THE BEST PRODUCT OR SERVICE.<br/><br/>
+
+            ◾ RULES & REGULATIONS:<br/>
+            ▪️ This is a complete online boutique.<br/>
+            ▪️ We don’t have any shop or outlet.<br/>
+            ▪️ ❌ No COD available.<br/>
+            ▪️ 💳 Payments only via Google Pay, PhonePe, Paytm & Bank Transfer.<br/>
+            ▪️ 🚫 If payment is not made within 2 days, order will be cancelled automatically.<br/>
+            ▪️ 🎥 After receiving parcel, Opening Video is MUST.<br/>
+            ❌ Without opening video, no complaints will be accepted.<br/>
+            👉 Issue must be clearly visible in the video.<br/><br/>
+
+            ▪️ 🌍 We ship worldwide.<br/><br/>
+
+            ▪️ 🚚 Shipping charge all over India: ₹60/- (Except Tripura & Assam)<br/>
+            ▪️ 🚚 Tripura & Assam: ₹80/-<br/>
+            ▪️ 👗 Shipping may change for Kurti/Dresses.<br/>
+            🌍 International shipping varies by location.<br/><br/>
+
+            🎁 Purchase above ₹2000/- & get free gifts from us.<br/><br/>
+
+            ▪️ ❌ No refund facility available.<br/>
+            ✅ Replacement / Repolish only if product is broken or discolored.
+            </b>
+            """,
             styles["Normal"]
         ))
         elements.append(Spacer(1, 20))
