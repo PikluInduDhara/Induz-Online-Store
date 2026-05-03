@@ -255,10 +255,10 @@ else:
                 size_list = [s.strip() for s in sizes.split(",")]
 
                 selected_size = st.selectbox(
-                    f"Select Size" {p['id']}",
-                    size_list,
-                    key=f"size_{p['id']}_{p['name']}"
-                )
+                        "Select Size",
+                        size_list,
+                        key=f"size_{p['id']}_{p['name']}"
+                    )
             else:
                 selected_size = "Default"
 
