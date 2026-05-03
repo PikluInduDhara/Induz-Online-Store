@@ -5,6 +5,8 @@ import pandas as pd
 import time
 import base64
 import gspread
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Table, TableStyle
+from reportlab.lib import colors
 from oauth2client.service_account import ServiceAccountCredentials
 from reportlab.platypus import SimpleDocTemplate, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
@@ -337,7 +339,8 @@ else:
             💰 Total: ₹{total}
 
             -------------------------------------
-
+            Our team will contact you for further delivery related updates once you make the payment as per WhatsApp confirmation.
+            
             Return or refund is only applicable if you receive any broken or discolored product
 
             DISPATCH TIME 5-7 DAYS
@@ -370,11 +373,16 @@ else:
             """
             st.session_state.order_done = True
             st.session_state.order_message = message
+
+            # ✅ SAVE CART FOR INVOICE
+            st.session_state.last_order = st.session_state.cart.copy()
+
+            # THEN CLEAR CART
             st.session_state.cart = []
 
             st.rerun()
 
-    if st.session_state.order_done:
+    if st.session_state.order_done and "last_order" in st.session_state:
 
         message = st.session_state.order_message
         url = "https://wa.me/917003884969?text=" + urllib.parse.quote(message)
@@ -418,13 +426,84 @@ else:
         Please take a screenshot and send your full address<br/><br/>
 
         🌻 Shipping charges may change for Kurti/Dresses
-        """
+                """
+        elements = []
 
-        doc.build([
-            Paragraph("Invoice", styles["Title"]),
-            Paragraph(message, styles["Normal"]),
-            Paragraph(extra_text, styles["Normal"])
-        ])
+        # -------- LOGO --------
+        if os.path.exists("images/logo.png"):
+            elements.append(Image("images/logo.png", width=120, height=120))
+
+        elements.append(Spacer(1, 10))
+
+        # -------- TITLE --------
+        elements.append(Paragraph("<b>SAJAI TOMAY INVOICE</b>", styles["Title"]))
+        elements.append(Spacer(1, 15))
+
+        # -------- CUSTOMER DETAILS --------
+        elements.append(Paragraph(f"<b>Order ID:</b> {order_id}", styles["Normal"]))
+        elements.append(Paragraph(f"<b>Name:</b> {name}", styles["Normal"]))
+        elements.append(Paragraph(f"<b>Phone:</b> {phone}", styles["Normal"]))
+        elements.append(Paragraph(f"<b>Address:</b> {state}, {addr}", styles["Normal"]))
+        elements.append(Spacer(1, 15))
+
+        # -------- TABLE (FLIPKART STYLE) --------
+        table_data = [["Product", "Qty", "Price", "Total"]]
+
+        for p, q in st.session_state.last_order:
+            price = int(p["cost"])
+            total_item = price * q
+            table_data.append([p["name"], q, f"₹{price}", f"₹{total_item}"])
+
+        table = Table(table_data)
+
+        table.setStyle(TableStyle([
+            ("BACKGROUND", (0,0), (-1,0), colors.pink),
+            ("TEXTCOLOR", (0,0), (-1,0), colors.white),
+            ("GRID", (0,0), (-1,-1), 1, colors.black),
+            ("ALIGN", (1,1), (-1,-1), "CENTER"),
+        ]))
+
+        elements.append(table)
+        elements.append(Spacer(1, 15))
+
+        # -------- TOTAL --------
+        elements.append(Paragraph(f"<b>Total Amount: ₹{total}</b>", styles["Normal"]))
+        elements.append(Spacer(1, 20))
+
+        # -------- PAYMENT MESSAGE --------
+        elements.append(Paragraph(
+            "<b>👉 Our team will contact you further delivery related update once you make the payment as per WhatsApp confirmation.</b>",
+            styles["Normal"]
+        ))
+        elements.append(Spacer(1, 20))
+
+        # -------- POLICY --------
+        elements.append(Paragraph("<b>Return & Delivery Policy</b>", styles["Heading2"]))
+        elements.append(Spacer(1, 10))
+
+        elements.append(Paragraph(
+            "Return only for damaged/discolored items.<br/>"
+            "Dispatch: 5-7 days<br/>"
+            "Delivery: 10-12 working days<br/><br/>"
+            "🙏 Happy Shopping<br/>✨ SAJAI TOMAY ❤️",
+            styles["Normal"]
+        ))
+        elements.append(Spacer(1, 20))
+
+        # -------- CONTACT --------
+        elements.append(Paragraph("<b>Contact & Shipping</b>", styles["Heading2"]))
+        elements.append(Spacer(1, 10))
+
+        elements.append(Paragraph(
+            "📍 Howrah Kona, Tentultala<br/>"
+            "📞 +91 9007893365 (3pm–9pm)<br/><br/>"
+            "🚚 WB: ₹50 | Outside: ₹80<br/>"
+            "🚫 COD Not Available",
+            styles["Normal"]
+        ))
+
+        # -------- BUILD --------
+        doc.build(elements)
 
         with open("invoice.pdf", "rb") as f:
             st.download_button("📄 Download Invoice", f, "invoice.pdf")
