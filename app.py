@@ -148,7 +148,11 @@ if mode == "Admin":
         # -------- DELIVERY DASHBOARD --------
         st.subheader("Delivery Dashboard")
 
-        orders = orders_sheet.get_all_records()
+        try:
+            orders = orders_sheet.get_all_records()
+        except:
+            st.error("⚠️ Sheet structure broken. Please fix columns in Google Sheet.")
+            st.stop()
         total_sales = 0
 
         headers = ["ID","Date","Customer","Phone","Address","Product","Qty","Value","Payment","Pay Ref","Del Ref","Status"]
@@ -380,7 +384,11 @@ else:
 
         else:
 
-            orders = orders_sheet.get_all_records()
+            try:
+                orders = orders_sheet.get_all_records()
+            except:
+                st.error("⚠️ Sheet structure broken. Please fix columns in Google Sheet.")
+                st.stop()
             order_id = len(orders) + 1
 
             for p, q, size in st.session_state.cart:
