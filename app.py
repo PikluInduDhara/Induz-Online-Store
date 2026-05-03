@@ -235,6 +235,10 @@ else:
                     continue
         col_img, col_info = st.columns([1,2])
 
+        images = [img.strip() for img in p.get("image","").split(",") if img.strip()]
+
+        col_img, col_info = st.columns([1,2])
+
         with col_img:
             if images:
                 st.image(get_image_url(images[0]), width=120)
@@ -244,27 +248,17 @@ else:
             st.write(f"₹{p['cost']}")
 
             sizes = p.get("sizes", "")
+            
             if sizes:
                 size_list = [s.strip() for s in sizes.split(",")]
+
                 selected_size = st.selectbox(
-                    "Select Size",
+                    f"Select Size {p['id']}",
                     size_list,
                     key=f"size_{p['id']}_{p['name']}"
                 )
             else:
                 selected_size = "Default"
-
-            st.write(f"Stock: {p['stock']}")
-        if sizes:
-            size_list = [s.strip() for s in sizes.split(",")]
-
-            selected_size = st.selectbox(
-                f"Select Size {p['id']}",
-                size_list,
-                key=f"size_{p['id']}_{p['name']}"
-            )
-        else:
-            selected_size = "Default"
 
         st.write(f"Stock: {p['stock']}")
 
