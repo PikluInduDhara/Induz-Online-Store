@@ -132,7 +132,7 @@ if mode == "Admin":
             )
 
             if col3.button("Update", key=f"u{i}"):
-                products_sheet.update_cell(i, 4, new_stock)
+                products_sheet.update_cell(i, 5, new_stock)
                 st.cache_data.clear()
                 st.rerun()
 
@@ -249,11 +249,18 @@ else:
             st.markdown(f"### {p['name']}")
             st.write(f"₹{p['cost']}")
 
-            sizes = p.get("size", "")
-            
-            if sizes:
-                size_list = [s.strip() for s in sizes.split(",")]
+            sizes = str(p.get("size", "") or "")
 
+            if sizes.strip():
+                size_list = [s.strip() for s in sizes.split(",") if s.strip()]
+                
+                selected_size = st.selectbox(
+                    "Select Size",
+                    size_list,
+                    key=f"size_{p['id']}_{p['name']}"
+                )
+            else:
+                selected_size = "Default"
                 selected_size = st.selectbox(
                         "Select Size",
                         size_list,
@@ -366,7 +373,7 @@ else:
                 for k, prod in enumerate(products_latest, start=2):
                     if prod["name"] == p["name"]:
                         new_stock = max(0, int(prod["stock"]) - q)
-                        products_sheet.update_cell(k, 4, new_stock)
+                        products_sheet.update_cell(k, 5, new_stock)
 
             st.cache_data.clear()
 
