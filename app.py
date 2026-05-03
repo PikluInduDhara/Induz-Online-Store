@@ -55,7 +55,7 @@ if mode == "Admin":
 
     password = st.sidebar.text_input("Password", type="password")
 
-    if password == "admin123":
+    if password == "Indu@1234#":
 
         st.header("Admin Panel")
 
@@ -166,12 +166,10 @@ if mode == "Admin":
             # ✅ ONLY CHANGE (Sales logic)
             if o["status"] == "Accepted" and o["payment"] == "Yes":
                 try:
-                    total_value = int(o["total"])
+                    total_sales += int(o["total"])
                 except:
-                    total_value = 0
-
-                if o["status"] == "Accepted" and o["payment"] == "Yes":
-                    total_sales += total_value
+                    pass
+                
             c = st.columns(len(headers))
 
             c[0].write(o["id"])
@@ -196,22 +194,30 @@ if mode == "Admin":
 
             if st.button(f"Save {i}"):
 
+                # 🔒 HARD LOCK (DO NOT TOUCH CANCELLED)
+                if o["status"] == "Cancelled":
+                    st.warning("❌ Cancelled orders cannot be modified")
+                    st.stop()
+
                 products_latest = products_sheet.get_all_records()
 
+                # ✅ STOCK RETURN ONLY ON FIRST CANCEL
                 if status == "Cancelled" and o["status"] != "Cancelled":
                     for j, p in enumerate(products_latest, start=2):
-                        if p["name"] in o["product"] and p["size"] in o["product"]:
+                        if p["name"] == o["product"] and str(p.get("size")) == str(o.get("size")):
                             new_stock = int(p["stock"]) + int(o["quantity"])
                             products_sheet.update_cell(j, 5, new_stock)
 
+                # ✅ UPDATE ORDER (ONLY ONCE)
                 orders_sheet.update_cell(i, 10, payment)
                 orders_sheet.update_cell(i, 11, pay_ref)
                 orders_sheet.update_cell(i, 12, del_ref)
                 orders_sheet.update_cell(i, 9, status)
 
+                # 🔄 REFRESH
                 st.cache_data.clear()
                 st.rerun()
-
+                
         st.write(f"### 💰 Total Sales: ₹{total_sales}")
 
 # ================= CUSTOMER =================
@@ -283,7 +289,7 @@ else:
                 st.markdown(f"### {name}")
                 st.write(f"₹{cost}")
 
-                size_list = [x["size"] for x in items]
+                size_list = list(set([str(x.get("size", "NA")) for x in items]))
 
                 selected_size = st.selectbox(
                     "Select Size",
@@ -291,7 +297,7 @@ else:
                     key=f"size_{name}_{cost}"
                 )
 
-                selected_product = next(x for x in items if x["size"] == selected_size)
+                selected_product = next(x for x in items if str(x.get("size")) == str(selected_size))
 
                 stock = int(selected_product["stock"])
 
@@ -414,7 +420,7 @@ else:
                 products_latest = products_sheet.get_all_records()
 
                 for k, prod in enumerate(products_latest, start=2):
-                    if prod["name"] == p["name"] and prod["size"] == size:
+                    if prod["name"] == p["name"] and str(prod.get("size")) == str(size):
                         new_stock = max(0, int(prod["stock"]) - q)
                         products_sheet.update_cell(k, 5, new_stock)
 
