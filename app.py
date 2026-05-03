@@ -161,8 +161,13 @@ if mode == "Admin":
 
             # ✅ ONLY CHANGE (Sales logic)
             if o["status"] == "Accepted" and o["payment"] == "Yes":
-                total_sales += int(o["total"])
+                try:
+                    total_value = int(o["total"])
+                except:
+                    total_value = 0
 
+                if o["status"] == "Accepted" and o["payment"] == "Yes":
+                    total_sales += total_value
             c = st.columns(len(headers))
 
             c[0].write(o["id"])
@@ -172,7 +177,7 @@ if mode == "Admin":
             c[4].write(o["address"])
             c[5].write(o["product"])
             c[6].write(o["quantity"])
-            c[7].write(o["total"])
+            c[7].write(str(o.get("total", 0)))
 
             payment = c[8].selectbox("", ["Yes","No"],
                 index=0 if o["payment"]=="Yes" else 1, key=f"pay{i}")
