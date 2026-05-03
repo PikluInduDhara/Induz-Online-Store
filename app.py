@@ -232,23 +232,36 @@ else:
 
         # 🔥 SEARCH FILTER
         if search_text and search_text.lower() not in p["name"].lower():
-            continue
-        images = [img.strip() for img in p.get("image","").split(",") if img.strip()]
-        if images:
-            cols = st.columns(3)
-            for i, img in enumerate(images):
-                cols[i % 3].image(get_image_url(img), width=120)
-        st.write(f"{p['name']} ₹{p['cost']}")
+                    continue
+        col_img, col_info = st.columns([1,2])
 
-        sizes = p.get("size") or p.get("sizes", "")
+        with col_img:
+            if images:
+                st.image(get_image_url(images[0]), width=120)
 
+        with col_info:
+            st.markdown(f"### {p['name']}")
+            st.write(f"₹{p['cost']}")
+
+            sizes = p.get("sizes", "")
+            if sizes:
+                size_list = [s.strip() for s in sizes.split(",")]
+                selected_size = st.selectbox(
+                    "Select Size",
+                    size_list,
+                    key=f"size_{p['id']}_{p['name']}"
+                )
+            else:
+                selected_size = "Default"
+
+            st.write(f"Stock: {p['stock']}")
         if sizes:
             size_list = [s.strip() for s in sizes.split(",")]
 
             selected_size = st.selectbox(
                 f"Select Size {p['id']}",
                 size_list,
-                key=f"size_{p['id']}"
+                key=f"size_{p['id']}_{p['name']}"
             )
         else:
             selected_size = "Default"
