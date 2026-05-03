@@ -160,7 +160,7 @@ if mode == "Admin":
         for i, o in enumerate(orders, start=2):
 
             # ✅ ONLY CHANGE (Sales logic)
-            if o["status"] == "Accepted":
+            if o["status"] == "Accepted" and o["payment"] == "Yes":
                 total_sales += int(o["total"])
 
             c = st.columns(len(headers))
@@ -195,10 +195,10 @@ if mode == "Admin":
                             new_stock = int(p["stock"]) + int(o["quantity"])
                             products_sheet.update_cell(j, 5, new_stock)
 
-                orders_sheet.update_cell(i, 9, payment)
-                orders_sheet.update_cell(i, 10, pay_ref)
-                orders_sheet.update_cell(i, 11, del_ref)
-                orders_sheet.update_cell(i, 8, status)
+                orders_sheet.update_cell(i, 10, payment)
+                orders_sheet.update_cell(i, 11, pay_ref)
+                orders_sheet.update_cell(i, 12, del_ref)
+                orders_sheet.update_cell(i, 9, status)
 
                 st.cache_data.clear()
                 st.rerun()
