@@ -120,6 +120,7 @@ if mode == "Admin":
                 for j, img in enumerate(images):
                     cols[j % 3].image(get_image_url(img), width=120)
             col1.write(f"{p['name']} ₹{p['cost']}")
+            col1.write(f"Sizes: {p.get('size','')}")
 
             stock_value = int(p.get("stock", 0) or 0)
 
@@ -233,7 +234,6 @@ else:
         # 🔥 SEARCH FILTER
         if search_text and search_text.lower() not in p["name"].lower():
                     continue
-        col_img, col_info = st.columns([1,2])
 
         images = [img.strip() for img in p.get("image","").split(",") if img.strip()]
 
@@ -241,13 +241,15 @@ else:
 
         with col_img:
             if images:
-                st.image(get_image_url(images[0]), width=120)
+                cols = st.columns(min(len(images), 3))
+                for i, img in enumerate(images[:3]):
+                    cols[i].image(get_image_url(img), width=120)
 
         with col_info:
             st.markdown(f"### {p['name']}")
             st.write(f"₹{p['cost']}")
 
-            sizes = p.get("sizes", "")
+            sizes = p.get("size", "")
             
             if sizes:
                 size_list = [s.strip() for s in sizes.split(",")]
