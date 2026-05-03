@@ -493,7 +493,7 @@ else:
         if "order_id" not in st.session_state:
             st.stop()
         message = st.session_state.order_message
-        url = "https://wa.me/917003884969?text=" + urllib.parse.quote(message)
+        url = "https://wa.me/919007893365?text=" + urllib.parse.quote(message)
 
         st.success("Order placed successfully!")
         st.markdown(f"[📲 Send Order to Admin]({url})")
