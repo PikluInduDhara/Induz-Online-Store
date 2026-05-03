@@ -384,9 +384,18 @@ else:
 
                 orders_sheet.append_row([
                     order_id,
-                    name, phone, f"{state}, {addr}",
-                    f"{p['name']} ({size})", q, item_total,
-                    "Pending", "No", "", "", time.strftime("%Y-%m-%d")
+                    name,
+                    phone,
+                    f"{state}, {addr}",
+                    p['name'],        # ✅ clean product name
+                    size,             # ✅ NEW SIZE COLUMN
+                    q,
+                    item_total,
+                    "Pending",
+                    "No",
+                    "",
+                    "",
+                    time.strftime("%Y-%m-%d")
                 ])
 
                 products_latest = products_sheet.get_all_records()
