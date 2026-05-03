@@ -8,7 +8,6 @@ import gspread
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Table, TableStyle
 from reportlab.lib import colors
 from oauth2client.service_account import ServiceAccountCredentials
-from reportlab.platypus import SimpleDocTemplate, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
 def get_image_url(img):
     if "drive.google.com" in img:
@@ -374,6 +373,14 @@ else:
             st.session_state.order_done = True
             st.session_state.order_message = message
 
+            # ✅ SAVE ORDER DATA FOR INVOICE
+            st.session_state.order_id = order_id
+            st.session_state.customer_name = name
+            st.session_state.customer_phone = phone
+            st.session_state.customer_address = addr
+            st.session_state.customer_state = state
+            st.session_state.order_total = total
+
             # ✅ SAVE CART FOR INVOICE
             st.session_state.last_order = st.session_state.cart.copy()
 
@@ -384,6 +391,9 @@ else:
 
     if st.session_state.order_done and "last_order" in st.session_state:
 
+    # ✅ ADD THIS LINE HERE
+        if "order_id" not in st.session_state:
+            st.stop()
         message = st.session_state.order_message
         url = "https://wa.me/917003884969?text=" + urllib.parse.quote(message)
 
@@ -440,10 +450,10 @@ else:
         elements.append(Spacer(1, 15))
 
         # -------- CUSTOMER DETAILS --------
-        elements.append(Paragraph(f"<b>Order ID:</b> {order_id}", styles["Normal"]))
-        elements.append(Paragraph(f"<b>Name:</b> {name}", styles["Normal"]))
-        elements.append(Paragraph(f"<b>Phone:</b> {phone}", styles["Normal"]))
-        elements.append(Paragraph(f"<b>Address:</b> {state}, {addr}", styles["Normal"]))
+        elements.append(Paragraph(f"<b>Order ID:</b> {st.session_state.order_id}", styles["Normal"]))
+        elements.append(Paragraph(f"<b>Name:</b> {st.session_state.customer_name}", styles["Normal"]))
+        elements.append(Paragraph(f"<b>Phone:</b> {st.session_state.customer_phone}", styles["Normal"]))
+        elements.append(Paragraph(f"<b>Address:</b> {st.session_state.customer_state}, {st.session_state.customer_address}", styles["Normal"]))
         elements.append(Spacer(1, 15))
 
         # -------- TABLE (FLIPKART STYLE) --------
@@ -467,7 +477,7 @@ else:
         elements.append(Spacer(1, 15))
 
         # -------- TOTAL --------
-        elements.append(Paragraph(f"<b>Total Amount: ₹{total}</b>", styles["Normal"]))
+        elements.append(Paragraph(f"<b>Total Amount: ₹{st.session_state.order_total}</b>", styles["Normal"]))
         elements.append(Spacer(1, 20))
 
         # -------- PAYMENT MESSAGE --------
