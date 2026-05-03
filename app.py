@@ -66,6 +66,7 @@ if mode == "Admin":
         new_price = st.text_input("Price")
         new_stock = st.number_input("Stock", 0, 1000)
         new_category = st.text_input("Category (optional)")
+        new_sizes = st.text_input("Sizes (comma separated: S,M,L,XL)")
 
         uploaded_files = st.file_uploader(
             "Upload Product Images",
@@ -96,7 +97,8 @@ if mode == "Admin":
                     new_price,
                     new_stock,
                     image_name,
-                    new_category
+                    new_category,
+                    new_sizes
                 ])
 
                 st.success("Product Added")
@@ -236,7 +238,22 @@ else:
             cols = st.columns(3)
             for i, img in enumerate(images):
                 cols[i % 3].image(get_image_url(img), width=120)
-        st.write(f"{p['name']} ₹{p['cost']} Stock {p['stock']}")
+        st.write(f"{p['name']} ₹{p['cost']}")
+
+        sizes = p.get("size") or p.get("sizes", "")
+
+        if sizes:
+            size_list = [s.strip() for s in sizes.split(",")]
+
+            selected_size = st.selectbox(
+                f"Select Size {p['id']}",
+                size_list,
+                key=f"size_{p['id']}"
+            )
+        else:
+            selected_size = "Default"
+
+        st.write(f"Stock: {p['stock']}")
 
         stock = int(p.get('stock', 0) or 0)
 
@@ -244,16 +261,37 @@ else:
             st.write("❌ Out of Stock")
             continue
 
-        qty = st.number_input(
-            f"Qty {p['id']}",
+        col1, col2, col3 = st.columns([1,2,1])
+
+        if col1.button("-", key=f"minus_{p['id']}"):
+            st.session_state[f"q_{p['id']}"] = max(1, st.session_state.get(f"q_{p['id']}", 1) - 1)
+
+        qty = col2.number_input(
+            "",
             min_value=1,
             max_value=stock,
-            value=1,
+            value=st.session_state.get(f"q_{p['id']}", 1),
             key=f"q_{p['id']}"
         )
 
+        if col3.button("+", key=f"plus_{p['id']}"):
+            st.session_state[f"q_{p['id']}"] = min(
+                stock,
+                st.session_state.get(f"q_{p['id']}", 1) + 1
+            )
+
         if st.button(f"Add {p['id']}", key=f"add_{p['id']}"):
-            st.session_state.cart.append((p, qty))
+
+            found = False
+
+            for i, (cp, cq, cs) in enumerate(st.session_state.cart):
+                if cp["id"] == p["id"] and cs == selected_size:
+                    st.session_state.cart[i] = (cp, cq + qty, cs)
+                    found = True
+                    break
+
+            if not found:
+                st.session_state.cart.append((p, qty, selected_size))
 
     # -------- CART --------
     st.subheader("Cart")
@@ -261,15 +299,15 @@ else:
     total = 0
     order_text = ""
 
-    for idx, (p, q) in enumerate(st.session_state.cart):
+    for idx, (p, q, size) in enumerate(st.session_state.cart):
 
         col1, col2 = st.columns([4,1])
 
         item_total = int(p['cost']) * q
         total += item_total
-        order_text += f"{p['name']} x {q} = ₹{item_total}\n"
+        order_text += f"{p['name']} ({size}) x {q} = ₹{item_total}\n"
 
-        col1.write(f"{p['name']} x {q} = ₹{item_total}")
+        col1.write(f"{p['name']} ({size}) x {q} = ₹{item_total}")
 
         if col2.button("❌", key=f"rem{idx}"):
             st.session_state.cart.pop(idx)
@@ -303,14 +341,14 @@ else:
             orders = orders_sheet.get_all_records()
             order_id = len(orders) + 1
 
-            for p, q in st.session_state.cart:
+            for p, q, size in st.session_state.cart:
 
                 item_total = int(p["cost"]) * q
 
                 orders_sheet.append_row([
                     order_id,
                     name, phone, f"{state}, {addr}",
-                    p["name"], q, item_total,
+                    f"{p['name']} ({size})", q, item_total,
                     "Pending", "No", "", "", time.strftime("%Y-%m-%d")
                 ])
 
@@ -459,10 +497,10 @@ else:
         # -------- TABLE (FLIPKART STYLE) --------
         table_data = [["Product", "Qty", "Price", "Total"]]
 
-        for p, q in st.session_state.last_order:
+        for p, q, size in st.session_state.last_order:
             price = int(p["cost"])
             total_item = price * q
-            table_data.append([p["name"], q, f"₹{price}", f"₹{total_item}"])
+            table_data.append([f"{p['name']} ({size})", q, f"₹{price}", f"₹{total_item}"])      
 
         table = Table(table_data)
 
