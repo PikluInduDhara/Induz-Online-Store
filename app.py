@@ -191,7 +191,7 @@ if mode == "Admin":
 
                 if status == "Cancelled" and o["status"] != "Cancelled":
                     for j, p in enumerate(products_latest, start=2):
-                        if p["name"] == o["product"]:
+                        if p["name"] in o["product"] and p["size"] in o["product"]:
                             new_stock = int(p["stock"]) + int(o["quantity"])
                             products_sheet.update_cell(j, 5, new_stock)
 
@@ -225,83 +225,110 @@ else:
     if "order_done" not in st.session_state:
         st.session_state.order_done = False
 
+    # -------- GROUP PRODUCTS (FLIPKART STYLE) --------
+    grouped = {}
+
     for p in products:
+        key = (p["name"], p["cost"], p.get("image",""), p.get("category",""))
 
-        # 🔥 CATEGORY FILTER
-        if selected_category != "All" and p.get("category") != selected_category:
-             continue
+        if key not in grouped:
+            grouped[key] = []
 
-        # 🔥 SEARCH FILTER
-        if search_text and search_text.lower() not in p["name"].lower():
-                    continue
+        grouped[key].append(p)
 
-        images = [img.strip() for img in p.get("image","").split(",") if img.strip()]
+    # -------- DISPLAY PRODUCTS --------
+    for (name, cost, image, category), items in grouped.items():
 
-        col_img, col_info = st.columns([1,2])
+        # 🔥 FILTER (KEEP YOUR EXISTING FILTER LOGIC)
+        if selected_category != "All" and category != selected_category:
+            continue
 
-        with col_img:
-            if images:
-                cols = st.columns(3)
-                for i, img in enumerate(images[:3]):
-                    cols[i].image(get_image_url(img), width=120)
+        if search_text and search_text.lower() not in name.lower():
+            continue
 
-        with col_info:
-            st.markdown(f"### {p['name']}")
-            st.write(f"₹{p['cost']}")
+        images = [img.strip() for img in image.split(",") if img.strip()]
 
-            sizes = str(p.get("size", "") or "")
+        card = st.container()
 
-            sizes = str(p.get("size", "") or "")
+        with card:
+            st.markdown("""
+                <div style="
+                    border:1px solid #eee;
+                    border-radius:10px;
+                    padding:15px;
+                    margin-bottom:15px;
+                    box-shadow:0 2px 6px rgba(0,0,0,0.05);
+                ">
+            """, unsafe_allow_html=True)
 
-            if sizes.strip():
-                size_list = [s.strip() for s in sizes.split(",") if s.strip()]
+            col_img, col_info = st.columns([1,2])
+            # -------- IMAGE --------
+            with col_img:
+                if images:
+                    cols = st.columns(3)
+                    for i, img in enumerate(images[:3]):
+                        cols[i].image(get_image_url(img), width=120)
+
+            # -------- INFO --------
+            with col_info:
+                st.markdown(f"### {name}")
+                st.write(f"₹{cost}")
+
+                size_list = [x["size"] for x in items]
 
                 selected_size = st.selectbox(
                     "Select Size",
                     size_list,
-                    key=f"size_{p['id']}_{p['name']}"
+                    key=f"size_{name}_{cost}"
                 )
+
+                selected_product = next(x for x in items if x["size"] == selected_size)
+
+                stock = int(selected_product["stock"])
+
+                st.write(f"Stock: {stock}")
+
+            # -------- QTY + ADD --------
+            if stock > 0:
+                col1, col2, col3 = st.columns([1,2,1])
+
+                if col1.button("-", key=f"minus_{name}_{cost}"):
+                    st.session_state[f"q_{name}_{cost}"] = max(
+                        1,
+                        st.session_state.get(f"q_{name}_{cost}", 1) - 1
+                    )
+
+                qty = col2.number_input(
+                    "",
+                    min_value=1,
+                    max_value=stock,
+                    value=st.session_state.get(f"q_{name}_{cost}", 1),
+                    key=f"q_{name}_{cost}"
+                )
+
+                if col3.button("+", key=f"plus_{name}_{cost}"):
+                    st.session_state[f"q_{name}_{cost}"] = min(
+                        stock,
+                        st.session_state.get(f"q_{name}_{cost}", 1) + 1
+                    )
+
+                if st.button(f"Add {name}", key=f"add_{name}_{cost}"):
+
+                    found = False
+
+                    for i, (cp, cq, cs) in enumerate(st.session_state.cart):
+                        if cp["name"] == selected_product["name"] and cs == selected_size:
+                            st.session_state.cart[i] = (cp, cq + qty, cs)
+                            found = True
+                            break
+
+                    if not found:
+                        st.session_state.cart.append((selected_product, qty, selected_size))
+
             else:
-                selected_size = "Default"
-        st.write(f"Stock: {p['stock']}")
+                st.write("❌ Out of Stock")
 
-        stock = int(p.get('stock', 0) or 0)
-
-        if stock <= 0:
-            st.write("❌ Out of Stock")
-            continue
-
-        col1, col2, col3 = st.columns([1,2,1])
-
-        if col1.button("-", key=f"minus_{p['id']}"):
-            st.session_state[f"q_{p['id']}"] = max(1, st.session_state.get(f"q_{p['id']}", 1) - 1)
-
-        qty = col2.number_input(
-            "",
-            min_value=1,
-            max_value=stock,
-            value=st.session_state.get(f"q_{p['id']}", 1),
-            key=f"q_{p['id']}"
-        )
-
-        if col3.button("+", key=f"plus_{p['id']}"):
-            st.session_state[f"q_{p['id']}"] = min(
-                stock,
-                st.session_state.get(f"q_{p['id']}", 1) + 1
-            )
-
-        if st.button(f"Add {p['id']}", key=f"add_{p['id']}"):
-
-            found = False
-
-            for i, (cp, cq, cs) in enumerate(st.session_state.cart):
-                if cp["id"] == p["id"] and cs == selected_size:
-                    st.session_state.cart[i] = (cp, cq + qty, cs)
-                    found = True
-                    break
-
-            if not found:
-                st.session_state.cart.append((p, qty, selected_size))
+            st.markdown("</div>", unsafe_allow_html=True)
 
     # -------- CART --------
     st.subheader("Cart")
@@ -365,7 +392,7 @@ else:
                 products_latest = products_sheet.get_all_records()
 
                 for k, prod in enumerate(products_latest, start=2):
-                    if prod["name"] == p["name"]:
+                    if prod["name"] == p["name"] and prod["size"] == size:
                         new_stock = max(0, int(prod["stock"]) - q)
                         products_sheet.update_cell(k, 5, new_stock)
 
