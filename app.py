@@ -323,20 +323,51 @@ else:
             st.cache_data.clear()
 
             message = f"""
-    🌸 Sajai Tomay Order 🌸
+            🌸 Sajai Tomay Order 🌸
 
-    🆔 Order ID: {order_id}
+            🆔 Order ID: {order_id}
 
-    👤 Name: {name}
-    📞 Phone: {phone}
-    📍 Address: {state}, {addr}
+            👤 Name: {name}
+            📞 Phone: {phone}
+            📍 Address: {state}, {addr}
 
-    🛒 Items:
-    {order_text}
+            🛒 Items:
+            {order_text}
 
-    💰 Total: ₹{total}
-    """
+            💰 Total: ₹{total}
 
+            -------------------------------------
+
+            Return or refund is only applicable if you receive any broken or discolored product
+
+            DISPATCH TIME 5-7 DAYS
+
+            PLEASE EXPECT DELIVERY WITHIN 10-12 WORKING DAYS🙏♥️
+            HAPPY SHOPPING 
+            ✨SAJAI TOMAY❤️
+
+            -------------------------------------
+
+            SAJAI TOMAY 🌻Everyone will be replied to as soon as possible🙏👇
+            ALL OVER 🇮🇳INDIA🇮🇳 DELIVERY AVAILABLE
+
+            My Address:
+            Howrah Kona, Tentultala 711114
+            (near sagor Toto garage before piyara bagan)
+
+            📞 calling no. +91 9007893365 (call time 3pm to 9pm)
+
+            🚚 Shipping:
+            West Bengal → 50 (prepaid)
+            Outside WB → 80 (prepaid)
+
+            🚫 COD not available
+
+            📌 For booking:
+            Please take a screenshot and send your full address
+
+            🌻 Shipping charges may change for Kurti/Dresses
+            """
             st.session_state.order_done = True
             st.session_state.order_message = message
             st.session_state.cart = []
@@ -354,9 +385,45 @@ else:
         doc = SimpleDocTemplate("invoice.pdf")
         styles = getSampleStyleSheet()
 
+        extra_text = """
+        <br/><br/>-------------------------------------<br/><br/>
+
+        Return or refund is only applicable if you receive any broken or discolored product<br/><br/>
+
+        DISPATCH TIME 5-7 DAYS<br/><br/>
+
+        PLEASE EXPECT DELIVERY WITHIN 10-12 WORKING DAYS🙏♥️<br/>
+        HAPPY SHOPPING<br/>
+        ✨SAJAI TOMAY❤️<br/><br/>
+
+        -------------------------------------<br/><br/>
+
+        SAJAI TOMAY 🌻Everyone will be replied to as soon as possible🙏👇<br/><br/>
+
+        ALL OVER 🇮🇳INDIA🇮🇳 DELIVERY AVAILABLE<br/><br/>
+
+        My Address:<br/>
+        Howrah Kona, Tentultala 711114<br/>
+        (near sagor Toto garage before piyara bagan)<br/><br/>
+
+        📞 calling no. +91 9007893365 (call time 3pm to 9pm)<br/><br/>
+
+        🚚 Shipping:<br/>
+        West Bengal → 50 (prepaid)<br/>
+        Outside WB → 80 (prepaid)<br/><br/>
+
+        🚫 COD not available<br/><br/>
+
+        📌 For booking:<br/>
+        Please take a screenshot and send your full address<br/><br/>
+
+        🌻 Shipping charges may change for Kurti/Dresses
+        """
+
         doc.build([
             Paragraph("Invoice", styles["Title"]),
-            Paragraph(message, styles["Normal"])
+            Paragraph(message, styles["Normal"]),
+            Paragraph(extra_text, styles["Normal"])
         ])
 
         with open("invoice.pdf", "rb") as f:
