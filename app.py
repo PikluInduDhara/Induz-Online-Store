@@ -95,10 +95,10 @@ if mode == "Admin":
                     len(products_sheet.get_all_records())+1,
                     new_name,
                     new_price,
-                    new_stock,
+                    new_sizes,      # ✅ size column
+                    new_stock,      # ✅ stock column
                     image_name,
-                    new_category,
-                    new_sizes
+                    new_category
                 ])
 
                 st.success("Product Added")
@@ -241,7 +241,7 @@ else:
 
         with col_img:
             if images:
-                cols = st.columns(min(len(images), 3))
+                cols = st.columns(3)
                 for i, img in enumerate(images[:3]):
                     cols[i].image(get_image_url(img), width=120)
 
@@ -255,7 +255,7 @@ else:
                 size_list = [s.strip() for s in sizes.split(",")]
 
                 selected_size = st.selectbox(
-                    f"Select Size {p['id']}",
+                    f"Select Size" {p['id']}",
                     size_list,
                     key=f"size_{p['id']}_{p['name']}"
                 )
