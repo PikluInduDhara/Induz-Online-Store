@@ -411,15 +411,21 @@ else:
 
     state = ""
 
+    district = ""
+    state = ""
+
     if len(pincode) == 6:
 
         try:
             url = f"https://api.postalpincode.in/pincode/{pincode}"
-            response = requests.get(url).json()
 
-            if response[0]["Status"] == "Success":
+            response = requests.get(url, timeout=5)
 
-                post = response[0]["PostOffice"][0]
+            data = response.json()
+
+            if data[0]["Status"] == "Success":
+
+                post = data[0]["PostOffice"][0]
 
                 state = post["State"]
 
@@ -430,7 +436,7 @@ else:
             else:
                 st.error("Invalid PIN Code")
 
-        except:
+        except Exception as e:
             st.error("Unable to detect location")
 
     addr = st.text_area("Address")
@@ -464,7 +470,7 @@ else:
                     order_id,
                     name,
                     phone,
-                    f"{state}, {addr}",
+                    f"{district if state else ''}, {state}, {addr}",
                     p['name'],        # ✅ clean product name
                     size,             # ✅ NEW SIZE COLUMN
                     q,
