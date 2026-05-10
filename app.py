@@ -224,6 +224,28 @@ if mode == "Admin":
 else:
 
     st.subheader("Products")
+    # -------- OFFER BANNER --------
+    st.markdown("""
+    <div style="
+        background-color:#ffe6f0;
+        padding:15px;
+        border-radius:10px;
+        border:2px solid #ff66a3;
+        margin-bottom:20px;
+        text-align:center;
+    ">
+        <h2 style="color:#d63384;">🎉 GRAND OPENING OFFER 🎉</h2>
+
+        <p style="font-size:18px;">
+        🚚 FREE SHIPPING from <b>06th Jun-2026 to 05th Jul-2026</b><br><br>
+
+        💖 Free Gifts on orders above ₹2000<br><br>
+
+        ✨ HAPPY SHOPPING ✨<br>
+        ❤️ SAJAI TOMAY ❤️
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
 
     products = products_sheet.get_all_records()
     products = pd.DataFrame(products).to_dict("records")
