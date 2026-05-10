@@ -224,29 +224,57 @@ if mode == "Admin":
 else:
 
     st.subheader("Products")
-    # -------- OFFER BANNER --------
+    # -------- BEAUTIFUL OFFER BANNER --------
     st.markdown("""
     <div style="
-        background-color:#ffe6f0;
-        padding:15px;
-        border-radius:10px;
-        border:2px solid #ff66a3;
-        margin-bottom:20px;
-        text-align:center;
+        background: linear-gradient(135deg, #ffe6f2, #fff0f5);
+        padding: 30px;
+        border-radius: 20px;
+        border: 3px solid #ff4d94;
+        margin-bottom: 25px;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(255, 77, 148, 0.25);
     ">
-        <h2 style="color:#d63384;">🎉 GRAND OPENING OFFER 🎉</h2>
 
-        <p style="font-size:18px;">
-        🚚 FREE SHIPPING from <b>06th Jun-2026 to 05th Jul-2026</b><br><br>
+        <h1 style="
+            color:#d63384;
+            font-size:42px;
+            margin-bottom:15px;
+            font-weight:bold;
+        ">
+            🎉 GRAND OPENING OFFER 🎉
+        </h1>
 
-        💖 Free Gifts on orders above ₹2000<br><br>
+        <div style="
+            background-color:white;
+            padding:20px;
+            border-radius:15px;
+            margin-top:15px;
+            box-shadow:0 2px 10px rgba(0,0,0,0.08);
+        ">
 
-        ✨ HAPPY SHOPPING ✨<br>
-        ❤️ SAJAI TOMAY ❤️
-        </p>
+            <p style="
+                font-size:22px;
+                color:#444;
+                line-height:1.8;
+                font-weight:500;
+            ">
+
+            🚚 <b style="color:#ff0066;">FREE SHIPPING</b><br>
+            From <b>06th Jun 2026</b> to <b>05th Jul 2026</b><br><br>
+
+            🎁 <b>Free Gifts</b> on orders above <b>₹2000</b><br><br>
+
+            ✨ HAPPY SHOPPING ✨<br>
+
+            ❤️ <b>SAJAI TOMAY</b> ❤️
+
+            </p>
+
+        </div>
+
     </div>
     """, unsafe_allow_html=True)
-
     products = products_sheet.get_all_records()
     products = pd.DataFrame(products).to_dict("records")
     # 🔥 SEARCH BAR
