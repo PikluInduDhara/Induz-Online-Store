@@ -417,17 +417,36 @@ else:
 
         for idx, (p, q, size) in enumerate(st.session_state.cart):
 
-            col1, col2 = st.columns([4,1])
+            col_img, col_info, col_remove = st.columns([1,4,1])
 
-            item_total = int(p['cost']) * q
-            total += item_total
-            order_text += f"{p['name']} ({size}) x {q} = ₹{item_total}\n"
+            # -------- PRODUCT IMAGE --------
+            images = [img.strip() for img in p.get("image","").split(",") if img.strip()]
 
-            col1.write(f"{p['name']} ({size}) x {q} = ₹{item_total}")
+            with col_img:
+                if images:
+                    st.image(get_image_url(images[0]), width=100)
 
-            if col2.button("❌", key=f"rem{idx}"):
-                st.session_state.cart.pop(idx)
-                st.rerun()
+            # -------- PRODUCT INFO --------
+            with col_info:
+
+                item_total = int(p['cost']) * q
+                total += item_total
+
+                order_text += f"{p['name']} ({size}) x {q} = ₹{item_total}\n"
+
+                st.markdown(f"### {p['name']}")
+                st.write(f"Size: {size}")
+                st.write(f"Qty: {q}")
+                st.write(f"Price: ₹{p['cost']}")
+                st.write(f"Total: ₹{item_total}")
+
+            # -------- REMOVE BUTTON --------
+            with col_remove:
+                if st.button("❌", key=f"rem{idx}"):
+                    st.session_state.cart.pop(idx)
+                    st.rerun()
+
+            st.markdown("---")
 
         st.write(f"Total ₹{total}")
         name = st.text_input("Name")
