@@ -5,6 +5,7 @@ import pandas as pd
 import time
 import base64
 import requests
+import pgeocode
 import gspread
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Table, TableStyle
 from reportlab.lib import colors
@@ -417,26 +418,21 @@ else:
     if len(pincode) == 6:
 
         try:
-            url = f"https://api.postalpincode.in/pincode/{pincode}"
+            nomi = pgeocode.Nominatim("in")
 
-            response = requests.get(url, timeout=5)
+            location = nomi.query_postal_code(pincode)
 
-            data = response.json()
+            district = str(location.county_name)
+            state = str(location.state_name)
 
-            if data[0]["Status"] == "Success":
-
-                post = data[0]["PostOffice"][0]
-
-                state = post["State"]
-
-                district = post["District"]
+            if state != "nan":
 
                 st.success(f"📍 {district}, {state}")
 
             else:
                 st.error("Invalid PIN Code")
 
-        except Exception as e:
+        except:
             st.error("Unable to detect location")
 
     addr = st.text_area("Address")
