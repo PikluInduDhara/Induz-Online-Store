@@ -178,7 +178,9 @@ if mode == "Admin":
             c[1].write(o["order_date"])
             c[2].write(o["customer"])
             c[3].write(o["phone"])
-            c[4].write(o["address"])
+            c[4].write(
+                f"{o['city']}, {o['state']} - {o['pincode']}\n{o['address']}"
+            )
             c[5].write(o["product"])
             c[6].write(o["quantity"])
             c[7].write(str(o.get("total", 0)))
@@ -414,6 +416,7 @@ else:
 
     district = ""
     state = ""
+    city = ""
 
     if len(pincode) == 6:
 
@@ -428,6 +431,11 @@ else:
             if state != "nan":
 
                 st.success(f"📍 {district}, {state}")
+
+                city = st.text_input(
+                    "City / Area",
+                    value=district
+                )
 
             else:
                 st.error("Invalid PIN Code")
@@ -466,9 +474,12 @@ else:
                     order_id,
                     name,
                     phone,
-                    f"{district if state else ''}, {state}, {addr}",
-                    p['name'],        # ✅ clean product name
-                    size,             # ✅ NEW SIZE COLUMN
+                    pincode,
+                    state,
+                    city,
+                    addr,
+                    p['name'],
+                    size,
                     q,
                     item_total,
                     "Pending",
@@ -494,7 +505,9 @@ else:
 
             👤 Name: {name}
             📞 Phone: {phone}
-            📍 Address: {state}, {addr}
+            📍 Address: {city}, {state} - {pincode}
+
+            🏠 {addr}
 
             🛒 Items:
             {order_text}
