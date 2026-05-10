@@ -391,6 +391,7 @@ else:
                         if not found:
                             st.session_state.cart.append((selected_product, qty, selected_size))
 
+                        st.rerun()
                 else:
                     st.write("❌ Out of Stock")
 
