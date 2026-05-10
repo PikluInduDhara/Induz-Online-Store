@@ -213,10 +213,10 @@ if mode == "Admin":
                             products_sheet.update_cell(j, 5, new_stock)
 
                 # ✅ UPDATE ORDER (ONLY ONCE)
-                orders_sheet.update_cell(i, 10, payment)
-                orders_sheet.update_cell(i, 11, pay_ref)
-                orders_sheet.update_cell(i, 12, del_ref)
-                orders_sheet.update_cell(i, 9, status)
+                orders_sheet.update_cell(i, 13, payment)
+                orders_sheet.update_cell(i, 14, pay_ref)
+                orders_sheet.update_cell(i, 15, del_ref)
+                orders_sheet.update_cell(i, 12, status)
 
                 # 🔄 REFRESH
                 st.cache_data.clear()
