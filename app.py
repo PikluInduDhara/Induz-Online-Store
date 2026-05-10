@@ -396,8 +396,9 @@ else:
                     st.write("❌ Out of Stock")
 
                 st.markdown("</div>", unsafe_allow_html=True)
-    if st.session_state.page == "cart" and not st.session_state.order_done:
-        if not st.session_state.cart:
+    if st.session_state.page == "cart":
+        if not st.session_state.cart and not st.session_state.order_done:
+
             st.info("🛒 Your cart is empty")
 
             if st.button("⬅ Go Shopping"):
