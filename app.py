@@ -4,6 +4,7 @@ import urllib.parse
 import pandas as pd
 import time
 import base64
+import requests
 import gspread
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Table, TableStyle
 from reportlab.lib import colors
@@ -406,10 +407,31 @@ else:
     name = st.text_input("Name")
     phone = st.text_input("Phone")
 
-    state = st.selectbox(
-        "State",
-        ["West Bengal","Bihar","Jharkhand","Odisha","Assam","UP","Delhi","Other"]
-    )
+    pincode = st.text_input("PIN Code")
+
+    state = ""
+
+    if len(pincode) == 6:
+
+        try:
+            url = f"https://api.postalpincode.in/pincode/{pincode}"
+            response = requests.get(url).json()
+
+            if response[0]["Status"] == "Success":
+
+                post = response[0]["PostOffice"][0]
+
+                state = post["State"]
+
+                district = post["District"]
+
+                st.success(f"📍 {district}, {state}")
+
+            else:
+                st.error("Invalid PIN Code")
+
+        except:
+            st.error("Unable to detect location")
 
     addr = st.text_area("Address")
 
