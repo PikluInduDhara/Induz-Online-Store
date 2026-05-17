@@ -39,25 +39,44 @@ orders_sheet = sheet.worksheet("orders")
 
 mode = st.sidebar.selectbox("Login Type", ["Customer", "Admin"])
 
-# -------- PREMIUM TOP NAVBAR --------
+# -------- PREMIUM STICKY NAVBAR --------
 
 if "cart" not in st.session_state:
     st.session_state.cart = []
 
 cart_qty = sum(q for _, q, _ in st.session_state.cart)
 
+st.markdown("""
+<style>
+
+.sticky-navbar {
+    position: sticky;
+    top: 0;
+    z-index: 999;
+    background: white;
+    padding: 10px 20px;
+    border-bottom: 2px solid #ffe6ef;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    border-radius: 0 0 15px 15px;
+}
+
+</style>
+""", unsafe_allow_html=True)
+
+st.markdown('<div class="sticky-navbar">', unsafe_allow_html=True)
+
 nav1, nav2, nav3 = st.columns([2,6,2])
 
 with nav1:
     if os.path.exists("images/logo.png"):
-        st.image("images/logo.png", width=90)
+        st.image("images/logo.png", width=180)
 
 with nav2:
     st.markdown("""
         <h1 style='
             color:#d63384;
             margin-top:20px;
-            font-size:42px;
+            font-size:48px;
             font-weight:bold;
         '>
         🌸 Sajai Tomay
@@ -73,6 +92,8 @@ with nav3:
         st.session_state.page = "cart"
 
         st.rerun()
+
+st.markdown("</div>", unsafe_allow_html=True)
 
 # ================= ADMIN =================
 if mode == "Admin":
