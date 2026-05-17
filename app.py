@@ -37,20 +37,42 @@ sheet = client.open("SajaiTomayDB")
 products_sheet = sheet.worksheet("products")
 orders_sheet = sheet.worksheet("orders")
 
-# ---------------- HEADER ----------------
-col1, col2 = st.columns([3,5])
-
-with col1:
-    if os.path.exists("images/logo.png"):
-        st.image("images/logo.png", width=220)
-
-with col2:
-    st.markdown(
-        "<h1 style='color:#d63384; font-size:42px; margin-top:30px;'>🌸 Sajai Tomay</h1>",
-        unsafe_allow_html=True
-    )
-
 mode = st.sidebar.selectbox("Login Type", ["Customer", "Admin"])
+
+# -------- PREMIUM TOP NAVBAR --------
+
+if "cart" not in st.session_state:
+    st.session_state.cart = []
+
+cart_qty = sum(q for _, q, _ in st.session_state.cart)
+
+nav1, nav2, nav3 = st.columns([2,6,2])
+
+with nav1:
+    if os.path.exists("images/logo.png"):
+        st.image("images/logo.png", width=90)
+
+with nav2:
+    st.markdown("""
+        <h1 style='
+            color:#d63384;
+            margin-top:20px;
+            font-size:42px;
+            font-weight:bold;
+        '>
+        🌸 Sajai Tomay
+        </h1>
+    """, unsafe_allow_html=True)
+
+with nav3:
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    if st.button(f"🛒 Cart ({cart_qty})", use_container_width=True):
+
+        st.session_state.page = "cart"
+
+        st.rerun()
 
 # ================= ADMIN =================
 if mode == "Admin":
@@ -283,13 +305,6 @@ else:
     if "page" not in st.session_state:
         st.session_state.page = "shop"
     cart_qty = sum(q for _, q, _ in st.session_state.cart)
-
-    colA, colB = st.columns([6,1])
-
-    with colB:
-        if st.button(f"🛒 Cart ({cart_qty})"):
-            st.session_state.page = "cart"
-            st.rerun()
 
     # -------- GROUP PRODUCTS (FLIPKART STYLE) --------
     grouped = {}
