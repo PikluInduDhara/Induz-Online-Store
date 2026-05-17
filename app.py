@@ -79,7 +79,7 @@ with nav2:
             font-size:48px;
             font-weight:bold;
         '>
-        🌸 Sajai Tomay
+        🌸 Sajai Tomay 🌸
         </h1>
     """, unsafe_allow_html=True)
 
