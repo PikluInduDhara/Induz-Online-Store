@@ -49,33 +49,45 @@ cart_qty = sum(q for _, q, _ in st.session_state.cart)
 st.markdown("""
 <style>
 
+/* HIDE STREAMLIT TOP HEADER */
+header[data-testid="stHeader"] {
+    display: none;
+}
+
+/* REMOVE EXTRA TOP GAP */
+.main {
+    padding-top: 0rem;
+}
+
+/* PREMIUM FIXED NAVBAR */
 .sticky-navbar {
     position: fixed;
     top: 0;
-    left: 0;
+    left: 260px;
     right: 0;
     z-index: 999999;
     background: white;
-    padding: 8px 30px;
+    padding: 10px 25px;
     border-bottom: 2px solid #ffe6ef;
     box-shadow: 0 4px 15px rgba(0,0,0,0.08);
 }
 
-/* push page content below fixed navbar */
-.main .block-container {
-    padding-top: 120px;
+/* PUSH CONTENT BELOW NAVBAR */
+.block-container {
+    padding-top: 120px !important;
 }
 
 </style>
 """, unsafe_allow_html=True)
 
+
 st.markdown('<div class="sticky-navbar">', unsafe_allow_html=True)
 
-nav1, nav2, nav3 = st.columns([2,6,2])
+nav1, nav2, nav3 = st.columns([2,5,2])
 
 with nav1:
     if os.path.exists("images/logo.png"):
-        st.image("images/logo.png", width=160)
+        st.image("images/logo.png", width=130)
 
 with nav2:
     st.markdown("""
