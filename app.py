@@ -55,32 +55,42 @@ cart_qty = sum(q for _, q, _ in st.session_state.cart)
 st.markdown("""
 <style>
 
-/* HIDE STREAMLIT TOP HEADER */
+/* HIDE STREAMLIT HEADER */
 header[data-testid="stHeader"] {
     display: none;
 }
 
-/* REMOVE EXTRA TOP GAP */
-.main {
-    padding-top: 0rem;
+/* MAIN CONTENT GAP */
+.block-container {
+    padding-top: 110px !important;
 }
 
-/* PREMIUM FIXED NAVBAR */
+/* FIXED NAVBAR */
 .sticky-navbar {
     position: fixed;
     top: 0;
-    left: 0;
+    left: 21rem;
     right: 0;
-    z-index: 999999;
+    height: 90px;
+    z-index: 999;
     background: white;
-    padding: 10px 25px;
     border-bottom: 2px solid #ffe6ef;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    padding: 10px 25px;
 }
 
-/* PUSH CONTENT BELOW NAVBAR */
-.block-container {
-    padding-top: 120px !important;
+/* MOBILE FIX */
+@media (max-width: 768px) {
+
+    .sticky-navbar {
+        left: 0 !important;
+        height: auto;
+        padding: 10px;
+    }
+
+    .block-container {
+        padding-top: 140px !important;
+    }
 }
 
 </style>
