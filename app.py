@@ -87,7 +87,7 @@ nav1, nav2, nav3 = st.columns([2,5,2])
 
 with nav1:
     if os.path.exists("images/logo.png"):
-        st.image("images/logo.png", width=130)
+        st.image("images/logo.png", width=180)
 
 with nav2:
     st.markdown("""
