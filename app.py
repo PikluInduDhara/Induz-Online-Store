@@ -409,7 +409,8 @@ else:
 
                                         image_carousel(
                                             image_urls=image_urls,
-                                            height=300
+                                            height=250,
+                                            key=f"carousel_{idx}_{col_num}"
                                         )
 
 
