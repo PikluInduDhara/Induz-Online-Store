@@ -53,11 +53,6 @@ cart_qty = sum(q for _, q, _ in st.session_state.cart)
 st.markdown("""
 <style>
 
-/* HIDE STREAMLIT HEADER */
-header[data-testid="stHeader"] {
-    display: none;
-}
-
 /* MAIN CONTENT GAP */
 .block-container {
     padding-top: 110px !important;
