@@ -55,7 +55,7 @@ st.markdown("""
 
 /* MAIN CONTENT GAP */
 .block-container {
-    padding-top: 110px !important;
+    padding-top: 45px !important;
 }
 
 /* FIXED NAVBAR */
@@ -64,12 +64,12 @@ st.markdown("""
     top: 0;
     left: 21rem;
     right: 0;
-    height: 90px;
+    height: 65px;
     z-index: 999;
     background: white;
     border-bottom: 2px solid #ffe6ef;
     box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-    padding: 10px 25px;
+    padding: 5px 20px;
 }
 
 /* MOBILE FIX */
@@ -82,7 +82,7 @@ st.markdown("""
     }
 
     .block-container {
-        padding-top: 140px !important;
+        padding-top: 60px !important;
     }
 }
 
