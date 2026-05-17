@@ -342,25 +342,35 @@ else:
                             col_img, col_info = st.columns([1,2])
                         # -------- IMAGE --------
                             with col_img:
-                                if images:
+                                
+                                    if images:
 
-                                    selected_img = st.session_state.get(
-                                        f"selected_{name}_{cost}",
-                                        images[0]
-                                    )
+                                        img_index = st.session_state.get(
+                                            f"img_index_{name}_{cost}",
+                                            0
+                                        )
 
-                                    st.image(get_image_url(selected_img), width=220)
+                                        st.image(get_image_url(images[img_index]), width=260)
 
-                                    thumb_cols = st.columns(min(3, len(images)))
+                                        prev_col, next_col = st.columns(2)
 
-                                    for i, img in enumerate(images[:3]):
+                                        with prev_col:
+                                            if st.button("⬅", key=f"prev_{name}_{cost}_{idx}_{col_num}"):
 
-                                        thumb_cols[i].image(get_image_url(img), width=70)
+                                                img_index = (img_index - 1) % len(images)
 
-                                        if thumb_cols[i].button("🔍", key=f"zoom_{name}_{i}"):
+                                                st.session_state[f"img_index_{name}_{cost}"] = img_index
 
-                                            st.session_state[f"selected_{name}_{cost}"] = img
-                                            st.rerun()
+                                                st.rerun()
+
+                                        with next_col:
+                                            if st.button("➡", key=f"next_{name}_{cost}_{idx}_{col_num}"):
+
+                                                img_index = (img_index + 1) % len(images)
+
+                                                st.session_state[f"img_index_{name}_{cost}"] = img_index
+
+                                                st.rerun()
                             # -------- INFO --------
                             with col_info:
                                 st.markdown(f"### {name}")
