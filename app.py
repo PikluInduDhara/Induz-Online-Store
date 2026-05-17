@@ -303,99 +303,125 @@ else:
         grouped[key].append(p)
     if st.session_state.page == "shop":
         # -------- DISPLAY PRODUCTS --------
-        for (name, cost, image, category), items in grouped.items():
+        product_list = list(grouped.items())
 
-            # 🔥 FILTER (KEEP YOUR EXISTING FILTER LOGIC)
-            if selected_category != "All" and category != selected_category:
-                continue
+        for idx in range(0, len(product_list), 2):
 
-            if search_text and search_text.lower() not in name.lower():
-                continue
+            cols = st.columns(2)
 
-            images = [img.strip() for img in image.split(",") if img.strip()]
+            for col_num in range(2):
 
-            card = st.container()
+                if idx + col_num < len(product_list):
 
-            with card:
-                st.markdown("""
-                    <div style="
-                        border:1px solid #eee;
-                        border-radius:10px;
-                        padding:15px;
-                        margin-bottom:15px;
-                        box-shadow:0 2px 6px rgba(0,0,0,0.05);
-                    ">
-                """, unsafe_allow_html=True)
+                    ((name, cost, image, category), items) = product_list[idx + col_num]
 
-                col_img, col_info = st.columns([1,2])
-                # -------- IMAGE --------
-                with col_img:
-                    if images:
-                        cols = st.columns(3)
-                        for i, img in enumerate(images[:3]):
-                            cols[i].image(get_image_url(img), width=120)
+                    with cols[col_num]:
 
-                # -------- INFO --------
-                with col_info:
-                    st.markdown(f"### {name}")
-                    st.write(f"₹{cost}")
+                        # 🔥 FILTER (KEEP YOUR EXISTING FILTER LOGIC)
+                        if selected_category != "All" and category != selected_category:
+                            continue
 
-                    size_list = list(set([str(x.get("size", "NA")) for x in items]))
+                        if search_text and search_text.lower() not in name.lower():
+                            continue
 
-                    selected_size = st.selectbox(
-                        "Select Size",
-                        size_list,
-                        key=f"size_{name}_{cost}"
-                    )
+                        images = [img.strip() for img in image.split(",") if img.strip()]
 
-                    selected_product = next(x for x in items if str(x.get("size")) == str(selected_size))
+                        card = st.container()
 
-                    stock = int(selected_product["stock"])
+                        with card:
+                            st.markdown("""
+                                <div style="
+                                    border:1px solid #eee;
+                                    border-radius:10px;
+                                    padding:15px;
+                                    margin-bottom:15px;
+                                    box-shadow:0 2px 6px rgba(0,0,0,0.05);
+                                ">
+                            """, unsafe_allow_html=True)
 
-                    st.write(f"Stock: {stock}")
+                            col_img, col_info = st.columns([1,2])
+                        # -------- IMAGE --------
+                            with col_img:
+                                if images:
 
-                # -------- QTY + ADD --------
-                if stock > 0:
-                    col1, col2, col3 = st.columns([1,2,1])
+                                    selected_img = st.session_state.get(
+                                        f"selected_{name}_{cost}",
+                                        images[0]
+                                    )
 
-                    if col1.button("-", key=f"minus_{name}_{cost}"):
-                        st.session_state[f"q_{name}_{cost}"] = max(
-                            1,
-                            st.session_state.get(f"q_{name}_{cost}", 1) - 1
-                        )
+                                    st.image(get_image_url(selected_img), width=220)
 
-                    qty = col2.number_input(
-                        "",
-                        min_value=1,
-                        max_value=stock,
-                        value=st.session_state.get(f"q_{name}_{cost}", 1),
-                        key=f"q_{name}_{cost}"
-                    )
+                                    thumb_cols = st.columns(min(3, len(images)))
 
-                    if col3.button("+", key=f"plus_{name}_{cost}"):
-                        st.session_state[f"q_{name}_{cost}"] = min(
-                            stock,
-                            st.session_state.get(f"q_{name}_{cost}", 1) + 1
-                        )
+                                    for i, img in enumerate(images[:3]):
 
-                    if st.button(f"Add {name}", key=f"add_{name}_{cost}"):
+                                        thumb_cols[i].image(get_image_url(img), width=70)
 
-                        found = False
+                                        if thumb_cols[i].button("🔍", key=f"zoom_{name}_{i}"):
 
-                        for i, (cp, cq, cs) in enumerate(st.session_state.cart):
-                            if cp["name"] == selected_product["name"] and cs == selected_size:
-                                st.session_state.cart[i] = (cp, cq + qty, cs)
-                                found = True
-                                break
+                                            st.session_state[f"selected_{name}_{cost}"] = img
+                                            st.rerun()
+                            # -------- INFO --------
+                            with col_info:
+                                st.markdown(f"### {name}")
+                                st.write(f"₹{cost}")
 
-                        if not found:
-                            st.session_state.cart.append((selected_product, qty, selected_size))
+                                size_list = list(set([str(x.get("size", "NA")) for x in items]))
 
-                        st.rerun()
-                else:
-                    st.write("❌ Out of Stock")
+                                selected_size = st.selectbox(
+                                    "Select Size",
+                                    size_list,
+                                    key=f"size_{name}_{cost}"
+                                )
 
-                st.markdown("</div>", unsafe_allow_html=True)
+                                selected_product = next(x for x in items if str(x.get("size")) == str(selected_size))
+
+                                stock = int(selected_product["stock"])
+
+                                st.write(f"Stock: {stock}")
+
+                            # -------- QTY + ADD --------
+                            if stock > 0:
+                                col1, col2 = st.columns([1,1])
+
+                                with col1:
+
+                                    qty = st.number_input(
+                                        "Quantity",
+                                        min_value=1,
+                                        max_value=stock,
+                                        value=1,
+                                        key=f"qty_{name}_{cost}"
+                                    )
+
+                                with col2:
+
+                                    st.write("")   # spacing
+                                    st.write("")
+
+                                    if st.button("🛒 Add to Cart", key=f"add_{name}_{cost}"):
+
+                                        found = False
+
+                                        for i, (cp, cq, cs) in enumerate(st.session_state.cart):
+
+                                            if cp["name"] == selected_product["name"] and cs == selected_size:
+
+                                                new_qty = min(cq + qty, stock)
+
+                                                st.session_state.cart[i] = (cp, new_qty, cs)
+
+                                                found = True
+                                                break
+
+                                        if not found:
+                                            st.session_state.cart.append((selected_product, qty, selected_size))
+
+                                        st.rerun()
+                            else:
+                                st.write("❌ Out of Stock")
+
+                            st.markdown("</div>", unsafe_allow_html=True)
     if st.session_state.page == "cart":
         if not st.session_state.cart and not st.session_state.order_done:
 
@@ -442,8 +468,20 @@ else:
 
             # -------- REMOVE BUTTON --------
             with col_remove:
+
+                if st.button("➖", key=f"dec_{idx}"):
+
+                    if q > 1:
+                        st.session_state.cart[idx] = (p, q - 1, size)
+                    else:
+                        st.session_state.cart.pop(idx)
+
+                    st.rerun()
+
                 if st.button("❌", key=f"rem{idx}"):
+
                     st.session_state.cart.pop(idx)
+                    st.session_state.page = "cart"
                     st.rerun()
 
             st.markdown("---")
@@ -467,8 +505,8 @@ else:
 
                 location = nomi.query_postal_code(pincode)
 
-                district = str(location.county_name)
-                state = str(location.state_name)
+                district = str(location.county_name or "")
+                state = str(location.state_name or "")
 
                 if state != "nan":
 
