@@ -50,14 +50,20 @@ st.markdown("""
 <style>
 
 .sticky-navbar {
-    position: sticky;
+    position: fixed;
     top: 0;
-    z-index: 999;
+    left: 0;
+    right: 0;
+    z-index: 999999;
     background: white;
-    padding: 10px 20px;
+    padding: 8px 30px;
     border-bottom: 2px solid #ffe6ef;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-    border-radius: 0 0 15px 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+}
+
+/* push page content below fixed navbar */
+.main .block-container {
+    padding-top: 120px;
 }
 
 </style>
@@ -69,7 +75,7 @@ nav1, nav2, nav3 = st.columns([2,6,2])
 
 with nav1:
     if os.path.exists("images/logo.png"):
-        st.image("images/logo.png", width=180)
+        st.image("images/logo.png", width=160)
 
 with nav2:
     st.markdown("""
