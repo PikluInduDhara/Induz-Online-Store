@@ -69,7 +69,7 @@ header[data-testid="stHeader"] {
 .sticky-navbar {
     position: fixed;
     top: 0;
-    left: 260px;
+    left: 0;
     right: 0;
     z-index: 999999;
     background: white;
@@ -89,13 +89,16 @@ header[data-testid="stHeader"] {
 
 st.markdown('<div class="sticky-navbar">', unsafe_allow_html=True)
 
-nav1, nav2, nav3 = st.columns([2,5,2])
+nav1, nav2, nav3, nav4 = st.columns([1,2,5,2])
 
 with nav1:
-    if os.path.exists("images/logo.png"):
-        st.image("images/logo.png", width=180)
+    st.write("")
 
 with nav2:
+    if os.path.exists("images/logo.png"):
+        st.image("images/logo.png", width=140)
+        
+with nav3:
     st.markdown("""
         <h1 style='
             color:#d63384;
@@ -107,7 +110,7 @@ with nav2:
         </h1>
     """, unsafe_allow_html=True)
 
-with nav3:
+with nav4:
 
     st.markdown("<br>", unsafe_allow_html=True)
 
