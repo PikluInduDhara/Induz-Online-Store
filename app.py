@@ -26,8 +26,6 @@ def get_image_url(img):
             return img
     return f"images/{img}"
 
-st.set_page_config(page_title="Sajai Tomay", layout="wide")
-
 # ---------------- GOOGLE SHEET ----------------
 scope = [
     "https://spreadsheets.google.com/feeds",
