@@ -1,4 +1,5 @@
 import streamlit as st
+from streamlit_image_carousel import image_carousel
 import os
 import urllib.parse
 import pandas as pd
@@ -393,33 +394,23 @@ else:
                                 ">
                             """, unsafe_allow_html=True)
 
-                            col_img, col_info = st.columns([1,2])
+                            col_img, col_info = st.columns([1.2,1.8])
                         # -------- IMAGE --------
                             with col_img:
                                 
+                                    # -------- SWIPE IMAGE CAROUSEL --------
+
                                     if images:
 
-                                        img_index = st.session_state.get(
-                                            f"img_index_{name}_{cost}",
-                                            0
+                                        image_urls = [
+                                            get_image_url(img)
+                                            for img in images
+                                        ]
+
+                                        image_carousel(
+                                            image_urls=image_urls,
+                                            height=300
                                         )
-
-                                        st.image(get_image_url(images[img_index]), width=260)
-                                        
-                                        dot_cols = st.columns(len(images))
-
-                                        for i in range(len(images)):
-
-                                            dot = "●" if i == img_index else "○"
-
-                                            if dot_cols[i].button(
-                                                dot,
-                                                key=f"dot_{name}_{cost}_{idx}_{i}"
-                                            ):
-
-                                                st.session_state[f"img_index_{name}_{cost}"] = i
-
-                                                st.rerun()
 
 
                             # -------- INFO --------
