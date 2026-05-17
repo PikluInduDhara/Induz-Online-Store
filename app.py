@@ -122,169 +122,248 @@ if mode == "Admin":
     if password == "Indu@1234#":
 
         st.header("Admin Panel")
-
-        # -------- ADD PRODUCT --------
-        st.subheader("➕ Add Product")
-
-        new_name = st.text_input("Product Name")
-        new_price = st.text_input("Price")
-        new_stock = st.number_input("Stock", 0, 1000)
-        new_category = st.text_input("Category (optional)")
-        new_sizes = st.text_input("Sizes (comma separated: S,M,L,XL)")
-
-        uploaded_files = st.file_uploader(
-            "Upload Product Images",
-            type=["png","jpg","jpeg"],
-            accept_multiple_files=True
+        admin_page = st.sidebar.radio(
+            "Admin Menu",
+            [
+                "📊 Dashboard",
+                "📦 Products",
+                "🚚 Orders"
+            ]
         )
+        if admin_page == "📊 Dashboard":
 
-        if st.button("Add Product"):
+            st.header("📊 Business Dashboard")
 
-            if new_name and new_price:
-
-                image_names = []
-
-                if uploaded_files:
-                    os.makedirs("images", exist_ok=True)
-
-                    for file in uploaded_files:
-                        filename = file.name
-                        image_names.append(filename)
-
-                        with open(os.path.join("images", filename), "wb") as f:
-                            f.write(file.getbuffer())
-
-                image_name = ",".join(image_names)
-                products_sheet.append_row([
-                    len(products_sheet.get_all_records())+1,
-                    new_name,
-                    new_price,
-                    new_sizes,      # ✅ size column
-                    new_stock,      # ✅ stock column
-                    image_name,
-                    new_category
-                ])
-
-                st.success("Product Added")
-                st.rerun()
-
-        # -------- PRODUCTS --------
-        st.subheader("Products")
-        products = products_sheet.get_all_records()
-
-        for i, p in enumerate(products, start=2):
-
-            col1, col2, col3, col4 = st.columns([3,2,2,2])
-
-            images = [img.strip() for img in p.get("image","").split(",") if img.strip()]
-
-            if images:
-                cols = st.columns(3)   # fixed 3 per row (clean look)
-
-                for j, img in enumerate(images):
-                    cols[j % 3].image(get_image_url(img), width=120)
-            col1.write(f"{p['name']} ₹{p['cost']}")
-            col1.write(f"Sizes: {p.get('size','')}")
-
-            stock_value = int(p.get("stock", 0) or 0)
-
-            new_stock = col2.number_input(
-                "Stock",
-                min_value=0,
-                value=stock_value,
-                key=f"s_{i}"
-            )
-
-            if col3.button("Update", key=f"u{i}"):
-                products_sheet.update_cell(i, 5, new_stock)
-                st.cache_data.clear()
-                st.rerun()
-
-            if col4.button("Delete", key=f"d{i}"):
-                products_sheet.delete_rows(i)
-                st.cache_data.clear()
-                st.rerun()
-
-        if st.button("🔄 Refresh"):
-            st.cache_data.clear()
-            st.rerun()
-
-        # -------- DELIVERY DASHBOARD --------
-        st.subheader("Delivery Dashboard")
-
-        try:
             orders = orders_sheet.get_all_records()
-        except:
-            st.error("⚠️ Sheet structure broken. Please fix columns in Google Sheet.")
-            st.stop()
-        total_sales = 0
 
-        headers = ["ID","Date","Customer","Phone","Address","Product","Qty","Value","Payment","Pay Ref","Del Ref","Status"]
-        cols = st.columns(len(headers))
+            total_orders = len(orders)
 
-        for col, h in zip(cols, headers):
-            col.write(f"**{h}**")
+            pending_orders = len([
+                o for o in orders
+                if o["status"] == "Pending"
+            ])
 
-        for i, o in enumerate(orders, start=2):
+            accepted_orders = len([
+                o for o in orders
+                if o["status"] == "Accepted"
+            ])
 
-            # ✅ ONLY CHANGE (Sales logic)
-            if o["status"] == "Accepted" and o["payment"] == "Yes":
-                try:
-                    total_sales += int(o["total"])
-                except:
-                    pass
-                
-            c = st.columns(len(headers))
+            cancelled_orders = len([
+                o for o in orders
+                if o["status"] == "Cancelled"
+            ])
 
-            c[0].write(o["id"])
-            c[1].write(o["order_date"])
-            c[2].write(o["customer"])
-            c[3].write(o["phone"])
-            c[4].write(
-                f"{o['city']}, {o['state']} - {o['pincode']}\n{o['address']}"
+            total_sales = sum(
+                int(o.get("total", 0))
+                for o in orders
+                if o["status"] == "Accepted"
+                and o["payment"] == "Yes"
             )
-            c[5].write(o["product"])
-            c[6].write(o["quantity"])
-            c[7].write(str(o.get("total", 0)))
 
-            payment = c[8].selectbox("", ["Yes","No"],
-                index=0 if o["payment"]=="Yes" else 1, key=f"pay{i}")
+            c1, c2, c3, c4, c5 = st.columns(5)
 
-            pay_ref = c[9].text_input("", value=o.get("payment_ref",""), key=f"pref{i}")
-            del_ref = c[10].text_input("", value=o.get("delivery_ref",""), key=f"dref{i}")
+            c1.metric("🛒 Orders", total_orders)
+            c2.metric("⏳ Pending", pending_orders)
+            c3.metric("✅ Accepted", accepted_orders)
+            c4.metric("❌ Cancelled", cancelled_orders)
+            c5.metric("💰 Sales", f"₹{total_sales}")
 
-            if o["status"] == "Cancelled":
-                status = c[11].selectbox("", ["Cancelled"], key=f"status{i}")
-            else:
-                status = c[11].selectbox("", ["Pending","Accepted","Cancelled"], key=f"status{i}")
+            st.markdown("---")
 
-            if st.button(f"Save {i}"):
+            st.subheader("📦 Category Wise Orders")
 
-                # 🔒 HARD LOCK (DO NOT TOUCH CANCELLED)
-                if o["status"] == "Cancelled":
-                    st.warning("❌ Cancelled orders cannot be modified")
-                    st.stop()
+            category_summary = {}
 
-                products_latest = products_sheet.get_all_records()
+            products_data = products_sheet.get_all_records()
 
-                # ✅ STOCK RETURN ONLY ON FIRST CANCEL
-                if status == "Cancelled" and o["status"] != "Cancelled":
-                    for j, p in enumerate(products_latest, start=2):
-                        if p["name"] == o["product"] and str(p.get("size")) == str(o.get("size")):
-                            new_stock = int(p["stock"]) + int(o["quantity"])
-                            products_sheet.update_cell(j, 5, new_stock)
+            for o in orders:
 
-                # ✅ UPDATE ORDER (ONLY ONCE)
-                orders_sheet.update_cell(i, 13, payment)
-                orders_sheet.update_cell(i, 14, pay_ref)
-                orders_sheet.update_cell(i, 15, del_ref)
-                orders_sheet.update_cell(i, 12, status)
+                product_name = o["product"]
 
-                # 🔄 REFRESH
+                category = "Others"
+
+                for p in products_data:
+                    if p["name"] == product_name:
+                        category = p.get("category", "Others")
+                        break
+
+                if category not in category_summary:
+                    category_summary[category] = {
+                        "Orders": 0,
+                        "Sales": 0
+                    }
+
+                category_summary[category]["Orders"] += 1
+
+                if o["status"] == "Accepted" and o["payment"] == "Yes":
+                    category_summary[category]["Sales"] += int(o.get("total", 0))
+
+            dashboard_df = pd.DataFrame(category_summary).T
+
+            st.dataframe(dashboard_df, use_container_width=True)
+        if admin_page == "📦 Products":
+            # -------- ADD PRODUCT --------
+            st.subheader("➕ Add Product")
+
+            new_name = st.text_input("Product Name")
+            new_price = st.text_input("Price")
+            new_stock = st.number_input("Stock", 0, 1000)
+            new_category = st.text_input("Category (optional)")
+            new_sizes = st.text_input("Sizes (comma separated: S,M,L,XL)")
+
+            uploaded_files = st.file_uploader(
+                "Upload Product Images",
+                type=["png","jpg","jpeg"],
+                accept_multiple_files=True
+            )
+
+            if st.button("Add Product"):
+
+                if new_name and new_price:
+
+                    image_names = []
+
+                    if uploaded_files:
+                        os.makedirs("images", exist_ok=True)
+
+                        for file in uploaded_files:
+                            filename = file.name
+                            image_names.append(filename)
+
+                            with open(os.path.join("images", filename), "wb") as f:
+                                f.write(file.getbuffer())
+
+                    image_name = ",".join(image_names)
+                    products_sheet.append_row([
+                        len(products_sheet.get_all_records())+1,
+                        new_name,
+                        new_price,
+                        new_sizes,      # ✅ size column
+                        new_stock,      # ✅ stock column
+                        image_name,
+                        new_category
+                    ])
+
+                    st.success("Product Added")
+                    st.rerun()
+
+            # -------- PRODUCTS --------
+            st.subheader("Products")
+            products = products_sheet.get_all_records()
+
+            for i, p in enumerate(products, start=2):
+
+                col1, col2, col3, col4 = st.columns([3,2,2,2])
+
+                images = [img.strip() for img in p.get("image","").split(",") if img.strip()]
+
+                if images:
+                    cols = st.columns(3)   # fixed 3 per row (clean look)
+
+                    for j, img in enumerate(images):
+                        cols[j % 3].image(get_image_url(img), width=120)
+                col1.write(f"{p['name']} ₹{p['cost']}")
+                col1.write(f"Sizes: {p.get('size','')}")
+
+                stock_value = int(p.get("stock", 0) or 0)
+
+                new_stock = col2.number_input(
+                    "Stock",
+                    min_value=0,
+                    value=stock_value,
+                    key=f"s_{i}"
+                )
+
+                if col3.button("Update", key=f"u{i}"):
+                    products_sheet.update_cell(i, 5, new_stock)
+                    st.cache_data.clear()
+                    st.rerun()
+
+                if col4.button("Delete", key=f"d{i}"):
+                    products_sheet.delete_rows(i)
+                    st.cache_data.clear()
+                    st.rerun()
+
+            if st.button("🔄 Refresh"):
                 st.cache_data.clear()
                 st.rerun()
-                
-        st.write(f"### 💰 Total Sales: ₹{total_sales}")
+        if admin_page == "🚚 Orders":
+            # -------- DELIVERY DASHBOARD --------
+            st.subheader("Delivery Dashboard")
+
+            try:
+                orders = orders_sheet.get_all_records()
+            except:
+                st.error("⚠️ Sheet structure broken. Please fix columns in Google Sheet.")
+                st.stop()
+            total_sales = 0
+
+            headers = ["ID","Date","Customer","Phone","Address","Product","Qty","Value","Payment","Pay Ref","Del Ref","Status"]
+            cols = st.columns(len(headers))
+
+            for col, h in zip(cols, headers):
+                col.write(f"**{h}**")
+
+            for i, o in enumerate(orders, start=2):
+
+                # ✅ ONLY CHANGE (Sales logic)
+                if o["status"] == "Accepted" and o["payment"] == "Yes":
+                    try:
+                        total_sales += int(o["total"])
+                    except:
+                        pass
+                    
+                c = st.columns(len(headers))
+
+                c[0].write(o["id"])
+                c[1].write(o["order_date"])
+                c[2].write(o["customer"])
+                c[3].write(o["phone"])
+                c[4].write(
+                    f"{o['city']}, {o['state']} - {o['pincode']}\n{o['address']}"
+                )
+                c[5].write(o["product"])
+                c[6].write(o["quantity"])
+                c[7].write(str(o.get("total", 0)))
+
+                payment = c[8].selectbox("", ["Yes","No"],
+                    index=0 if o["payment"]=="Yes" else 1, key=f"pay{i}")
+
+                pay_ref = c[9].text_input("", value=o.get("payment_ref",""), key=f"pref{i}")
+                del_ref = c[10].text_input("", value=o.get("delivery_ref",""), key=f"dref{i}")
+
+                if o["status"] == "Cancelled":
+                    status = c[11].selectbox("", ["Cancelled"], key=f"status{i}")
+                else:
+                    status = c[11].selectbox("", ["Pending","Accepted","Cancelled"], key=f"status{i}")
+
+                if st.button(f"Save {i}"):
+
+                    # 🔒 HARD LOCK (DO NOT TOUCH CANCELLED)
+                    if o["status"] == "Cancelled":
+                        st.warning("❌ Cancelled orders cannot be modified")
+                        st.stop()
+
+                    products_latest = products_sheet.get_all_records()
+
+                    # ✅ STOCK RETURN ONLY ON FIRST CANCEL
+                    if status == "Cancelled" and o["status"] != "Cancelled":
+                        for j, p in enumerate(products_latest, start=2):
+                            if p["name"] == o["product"] and str(p.get("size")) == str(o.get("size")):
+                                new_stock = int(p["stock"]) + int(o["quantity"])
+                                products_sheet.update_cell(j, 5, new_stock)
+
+                    # ✅ UPDATE ORDER (ONLY ONCE)
+                    orders_sheet.update_cell(i, 13, payment)
+                    orders_sheet.update_cell(i, 14, pay_ref)
+                    orders_sheet.update_cell(i, 15, del_ref)
+                    orders_sheet.update_cell(i, 12, status)
+
+                    # 🔄 REFRESH
+                    st.cache_data.clear()
+                    st.rerun()
+                    
+            st.write(f"### 💰 Total Sales: ₹{total_sales}")
 
 # ================= CUSTOMER =================
 else:
