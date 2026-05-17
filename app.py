@@ -99,7 +99,7 @@ with nav1:
 
 with nav2:
     if os.path.exists("images/logo.png"):
-        st.image("images/logo.png", width=140)
+        st.image("images/logo.png", width=180)
         
 with nav3:
     st.markdown("""
