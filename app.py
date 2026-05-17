@@ -188,19 +188,38 @@ if mode == "Admin":
                         break
 
                 if category not in category_summary:
+
                     category_summary[category] = {
-                        "Orders": 0,
+                        "Total Orders": 0,
+                        "Pending": 0,
+                        "Accepted": 0,
+                        "Cancelled": 0,
                         "Sales": 0
                     }
 
-                category_summary[category]["Orders"] += 1
+                # TOTAL ORDERS
+                category_summary[category]["Total Orders"] += 1
 
+                # PENDING
+                if o["status"] == "Pending":
+                    category_summary[category]["Pending"] += 1
+
+                # ACCEPTED
+                if o["status"] == "Accepted":
+                    category_summary[category]["Accepted"] += 1
+
+                # CANCELLED
+                if o["status"] == "Cancelled":
+                    category_summary[category]["Cancelled"] += 1
+
+                # SALES
                 if o["status"] == "Accepted" and o["payment"] == "Yes":
                     category_summary[category]["Sales"] += int(o.get("total", 0))
 
             dashboard_df = pd.DataFrame(category_summary).T
 
             st.dataframe(dashboard_df, use_container_width=True)
+            st.bar_chart(dashboard_df["Sales"])
         if admin_page == "📦 Products":
             # -------- ADD PRODUCT --------
             st.subheader("➕ Add Product")
