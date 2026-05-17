@@ -8,6 +8,11 @@ import base64
 import requests
 import pgeocode
 import gspread
+st.set_page_config(
+    page_title="Sajai Tomay",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Table, TableStyle
 from reportlab.lib import colors
 from oauth2client.service_account import ServiceAccountCredentials
