@@ -405,26 +405,23 @@ else:
                                         )
 
                                         st.image(get_image_url(images[img_index]), width=260)
+                                        
+                                        dot_cols = st.columns(len(images))
 
-                                        prev_col, next_col = st.columns(2)
+                                        for i in range(len(images)):
 
-                                        with prev_col:
-                                            if st.button("⬅", key=f"prev_{name}_{cost}_{idx}_{col_num}"):
+                                            dot = "●" if i == img_index else "○"
 
-                                                img_index = (img_index - 1) % len(images)
+                                            if dot_cols[i].button(
+                                                dot,
+                                                key=f"dot_{name}_{cost}_{idx}_{i}"
+                                            ):
 
-                                                st.session_state[f"img_index_{name}_{cost}"] = img_index
-
-                                                st.rerun()
-
-                                        with next_col:
-                                            if st.button("➡", key=f"next_{name}_{cost}_{idx}_{col_num}"):
-
-                                                img_index = (img_index + 1) % len(images)
-
-                                                st.session_state[f"img_index_{name}_{cost}"] = img_index
+                                                st.session_state[f"img_index_{name}_{cost}"] = i
 
                                                 st.rerun()
+
+
                             # -------- INFO --------
                             with col_info:
                                 st.markdown(f"### {name}")
