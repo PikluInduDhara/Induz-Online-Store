@@ -13,6 +13,12 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+st.markdown("""
+<link rel="manifest" href="/.streamlit/manifest.json">
+<meta name="theme-color" content="#d63384">
+""", unsafe_allow_html=True)
+
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Table, TableStyle
 from reportlab.lib import colors
 from oauth2client.service_account import ServiceAccountCredentials
