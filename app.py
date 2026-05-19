@@ -619,7 +619,7 @@ else:
 
                                         image_carousel(
                                             image_urls=image_urls,
-                                            height=250,
+                                            height=380,
                                             key=f"carousel_{idx}_{col_num}"
                                         )
 
@@ -660,9 +660,13 @@ else:
 
                                 st.markdown(f"""
                                 <div style="
-                                    color:green;
+                                    background:#e8fff0;
+                                    color:#008a3d;
+                                    padding:8px 12px;
+                                    border-radius:12px;
                                     font-weight:bold;
-                                    margin-bottom:10px;
+                                    margin-bottom:12px;
+                                    display:inline-block;
                                 ">
                                 ✅ In Stock: {stock}
                                 </div>
@@ -687,7 +691,11 @@ else:
                                     st.write("")   # spacing
                                     st.write("")
 
-                                    if st.button("🛒 Add to Cart", key=f"add_{name}_{cost}"):
+                                    if st.button(
+                                        "🛍️ Add To Cart",
+                                        key=f"add_{name}_{cost}",
+                                        use_container_width=True
+                                    ):
 
                                         found = False
 
