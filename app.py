@@ -91,6 +91,36 @@ st.markdown("""
         padding-top: 60px !important;
     }
 }
+/* BOTTOM MOBILE NAV */
+
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: white;
+    border-top: 1px solid #eee;
+    display: flex;
+    justify-content: space-around;
+    padding: 10px 0;
+    z-index: 9999;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.08);
+}
+
+.bottom-nav div {
+    text-align: center;
+    font-size: 14px;
+    color: #d63384;
+    font-weight: bold;
+}
+
+/* EXTRA SPACE FOR MOBILE */
+@media (max-width: 768px) {
+
+    .block-container {
+        padding-bottom: 90px !important;
+    }
+}
 
 </style>
 """, unsafe_allow_html=True)
@@ -1145,3 +1175,30 @@ else:
                 st.session_state.order_done = False
                 st.session_state.page = "shop"
                 st.rerun()
+            # -------- MOBILE BOTTOM NAV --------
+
+            st.markdown(f"""
+            <div class="bottom-nav">
+
+                <div>
+                    🏠<br>Home
+                </div>
+
+                <div>
+                    🔍<br>Search
+                </div>
+
+                <div>
+                    🛒<br>Cart ({cart_qty})
+                </div>
+
+                <div>
+                    ❤️<br>Wishlist
+                </div>
+
+                <div>
+                    👤<br>Profile
+                </div>
+
+            </div>
+            """, unsafe_allow_html=True)                
