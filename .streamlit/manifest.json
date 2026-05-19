@@ -1,0 +1,9 @@
+{
+  "name": "Sajai Tomay",
+  "short_name": "SajaiTomay",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ff4b91",
+  "orientation": "portrait"
+}
