@@ -1175,32 +1175,3 @@ else:
                 st.session_state.order_done = False
                 st.session_state.page = "shop"
                 st.rerun()
-# -------- MOBILE BOTTOM NAV --------
-
-bottom_nav_html = f"""
-<div class="bottom-nav">
-
-    <div>
-        🏠<br>Home
-    </div>
-
-    <div>
-        🔍<br>Search
-    </div>
-
-    <div>
-        🛒<br>Cart ({cart_qty})
-    </div>
-
-    <div>
-        ❤️<br>Wishlist
-    </div>
-
-    <div>
-        👤<br>Profile
-    </div>
-
-</div>
-"""
-
-st.markdown(bottom_nav_html, unsafe_allow_html=True)
