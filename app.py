@@ -594,11 +594,13 @@ else:
                         with card:
                             st.markdown("""
                                 <div style="
-                                    border:1px solid #eee;
-                                    border-radius:10px;
-                                    padding:15px;
-                                    margin-bottom:15px;
-                                    box-shadow:0 2px 6px rgba(0,0,0,0.05);
+                                    background:white;
+                                    border-radius:22px;
+                                    padding:18px;
+                                    margin-bottom:22px;
+                                    border:1px solid #f3f3f3;
+                                    box-shadow:0 4px 14px rgba(0,0,0,0.08);
+                                    transition:0.3s;
                                 ">
                             """, unsafe_allow_html=True)
 
@@ -624,8 +626,25 @@ else:
 
                             # -------- INFO --------
                             with col_info:
-                                st.markdown(f"### {name}")
-                                st.write(f"₹{cost}")
+                                st.markdown(f"""
+                                <h3 style="
+                                    color:#222;
+                                    font-size:24px;
+                                    font-weight:700;
+                                    margin-bottom:8px;
+                                ">
+                                {name}
+                                </h3>
+                                """, unsafe_allow_html=True)
+                                st.markdown(f"""
+                                <h2 style="
+                                    color:#d63384;
+                                    font-weight:bold;
+                                    margin-top:0;
+                                ">
+                                ₹{cost}
+                                </h2>
+                                """, unsafe_allow_html=True)
 
                                 size_list = list(set([str(x.get("size", "NA")) for x in items]))
 
@@ -639,7 +658,15 @@ else:
 
                                 stock = int(selected_product["stock"])
 
-                                st.write(f"Stock: {stock}")
+                                st.markdown(f"""
+                                <div style="
+                                    color:green;
+                                    font-weight:bold;
+                                    margin-bottom:10px;
+                                ">
+                                ✅ In Stock: {stock}
+                                </div>
+                                """, unsafe_allow_html=True)
 
                             # -------- QTY + ADD --------
                             if stock > 0:
