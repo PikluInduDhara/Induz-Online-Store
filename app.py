@@ -493,8 +493,9 @@ else:
     # CATEGORY ICONS
     cat_icons = {
 
-        "Saree": "👗",
-        "Dress": "👚",
+        "Saree": "🥻",
+        "Dress Men": "👔",
+        "Dress WoMen": "👗",
         "Jewellery": "💍",
         "Necklace": "📿",
         "Earrings": "✨",
