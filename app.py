@@ -1177,7 +1177,7 @@ else:
                 st.rerun()
 # -------- MOBILE BOTTOM NAV --------
 
-st.markdown(f"""
+bottom_nav_html = f"""
 <div class="bottom-nav">
 
     <div>
@@ -1201,4 +1201,6 @@ st.markdown(f"""
     </div>
 
 </div>
-""", unsafe_allow_html=True)
+"""
+
+st.markdown(bottom_nav_html, unsafe_allow_html=True)
