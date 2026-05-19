@@ -1175,6 +1175,7 @@ else:
                 st.session_state.order_done = False
                 st.session_state.page = "shop"
                 st.rerun()
+
             # -------- MOBILE BOTTOM NAV --------
 
             st.markdown(f"""
@@ -1201,4 +1202,4 @@ else:
                 </div>
 
             </div>
-            """, unsafe_allow_html=True)                
+            """, unsafe_allow_html=True)
