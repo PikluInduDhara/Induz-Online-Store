@@ -625,15 +625,14 @@ else:
                             st.markdown("""
                                 <div style="
                                     background:white;
-                                    border-radius:22px;
-                                    padding:18px;
-                                    margin-bottom:22px;
-                                    border:1px solid #f3f3f3;
-                                    box-shadow:0 4px 14px rgba(0,0,0,0.08);
+                                    border-radius:25px;
+                                    padding:22px;
+                                    margin-bottom:28px;
+                                    border:none;
+                                    box-shadow:0 8px 24px rgba(0,0,0,0.12);
                                     transition:0.3s;
                                 ">
                             """, unsafe_allow_html=True)
-
                             col_img, col_info = st.columns([1.2,1.8])
                         # -------- IMAGE --------
                             with col_img:
@@ -659,18 +658,19 @@ else:
                                 st.markdown(f"""
                                 <h3 style="
                                     color:#222;
-                                    font-size:24px;
-                                    font-weight:700;
-                                    margin-bottom:8px;
+                                    font-size:28px;
+                                    font-weight:800;
+                                    margin-bottom:10px;
                                 ">
                                 {name}
                                 </h3>
                                 """, unsafe_allow_html=True)
                                 st.markdown(f"""
                                 <h2 style="
-                                    color:#d63384;
-                                    font-weight:bold;
+                                    color:#ff3f6c;
+                                    font-weight:900;
                                     margin-top:0;
+                                    font-size:34px;
                                 ">
                                 ₹{cost}
                                 </h2>
@@ -722,7 +722,7 @@ else:
                                     st.write("")
 
                                     if st.button(
-                                        "🛍️ Add To Cart",
+                                        "🛒 ADD TO BAG",
                                         key=f"add_{name}_{cost}",
                                         use_container_width=True
                                     ):
