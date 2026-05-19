@@ -765,6 +765,9 @@ else:
             "Enter Your Phone Number",
             value=st.session_state.track_phone
         )
+        order_search = st.text_input(
+            "Enter Order ID"
+        )
 
         if st.button("🔍 Track Order"):
 
@@ -779,6 +782,7 @@ else:
             customer_orders = [
                 o for o in orders
                 if str(o["phone"]) == str(st.session_state.track_phone)
+                and str(o["id"]) == str(order_search)
             ]
 
             if customer_orders:
@@ -787,11 +791,12 @@ else:
 
                     st.markdown(f"""
                     <div style="
-                        background:white;
-                        padding:20px;
-                        border-radius:18px;
-                        margin-bottom:20px;
-                        box-shadow:0 4px 12px rgba(0,0,0,0.08);
+                        background:linear-gradient(135deg,#fff,#fff7fb);
+                        padding:25px;
+                        border-radius:24px;
+                        margin-bottom:25px;
+                        border:2px solid #ffd6e7;
+                        box-shadow:0 8px 24px rgba(0,0,0,0.08);
                     ">
 
                     <h3 style="color:#d63384;">
@@ -808,7 +813,16 @@ else:
 
                     <p><b>💳 Payment:</b> {o['payment']}</p>
 
-                    <p><b>📦 Status:</b> {o['status']}</p>
+                    <p>
+                    <b>📦 Order Status:</b>
+
+                    <span style="
+                        color:green;
+                        font-weight:bold;
+                    ">
+                    {o['status']}
+                    </span>
+                    </p>
 
                     <p><b>🚚 Courier Tracking:</b> {o.get('delivery_ref','Pending')}</p>
 
