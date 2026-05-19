@@ -158,6 +158,11 @@ with nav4:
         st.session_state.page = "cart"
 
         st.rerun()
+    if st.button("📦 Track Order", use_container_width=True):
+
+        st.session_state.page = "tracking"
+
+        st.rerun()
 
 st.markdown("</div>", unsafe_allow_html=True)
 
@@ -582,6 +587,8 @@ else:
         st.session_state.order_done = False
     if "page" not in st.session_state:
         st.session_state.page = "shop"
+    if "track_phone" not in st.session_state:
+        st.session_state.track_phone = ""
     cart_qty = sum(q for _, q, _ in st.session_state.cart)
 
     # -------- GROUP PRODUCTS (FLIPKART STYLE) --------
@@ -748,6 +755,70 @@ else:
                                 st.write("❌ Out of Stock")
 
                             st.markdown("</div>", unsafe_allow_html=True)
+    # -------- ORDER TRACKING PAGE --------
+
+    if st.session_state.page == "tracking":
+
+        st.title("📦 Track Your Order")
+
+        phone_search = st.text_input(
+            "Enter Your Phone Number",
+            value=st.session_state.track_phone
+        )
+
+        if st.button("🔍 Track Order"):
+
+            st.session_state.track_phone = phone_search
+            
+            st.rerun()
+
+        if st.session_state.track_phone:
+
+            orders = orders_sheet.get_all_records()
+
+            customer_orders = [
+                o for o in orders
+                if str(o["phone"]) == str(st.session_state.track_phone)
+            ]
+
+            if customer_orders:
+
+                for o in customer_orders:
+
+                    st.markdown(f"""
+                    <div style="
+                        background:white;
+                        padding:20px;
+                        border-radius:18px;
+                        margin-bottom:20px;
+                        box-shadow:0 4px 12px rgba(0,0,0,0.08);
+                    ">
+
+                    <h3 style="color:#d63384;">
+                    🆔 Order #{o['id']}
+                    </h3>
+
+                    <p><b>🛍️ Product:</b> {o['product']}</p>
+
+                    <p><b>📏 Size:</b> {o['size']}</p>
+
+                    <p><b>🔢 Quantity:</b> {o['quantity']}</p>
+
+                    <p><b>💰 Amount:</b> ₹{o['total']}</p>
+
+                    <p><b>💳 Payment:</b> {o['payment']}</p>
+
+                    <p><b>📦 Status:</b> {o['status']}</p>
+
+                    <p><b>🚚 Courier Tracking:</b> {o.get('delivery_ref','Pending')}</p>
+
+                    </div>
+                    """, unsafe_allow_html=True)
+
+            else:
+
+                st.warning("No orders found")
+            st.stop()
     if st.session_state.page == "cart":
         if not st.session_state.cart and not st.session_state.order_done:
 
