@@ -450,7 +450,99 @@ else:
 
     # 🔥 CATEGORY BUTTONS (VISIBLE LIKE AMAZON)
     categories = list(set([p.get("category","All") for p in products]))
-    selected_category = st.radio("Category", ["All"] + categories, horizontal=True)
+    # -------- PREMIUM CATEGORY SECTION --------
+
+    st.markdown("""
+    <style>
+
+    .category-title{
+        font-size:26px;
+        font-weight:bold;
+        color:#d63384;
+        margin-bottom:15px;
+    }
+
+    .category-card button{
+        width:100%;
+        border-radius:20px;
+        padding:15px 10px;
+        background:white;
+        border:1px solid #f3d6e2;
+        font-size:16px;
+        font-weight:bold;
+        transition:0.3s;
+        min-height:95px;
+        box-shadow:0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .category-card button:hover{
+        background:#fff0f5;
+        transform:scale(1.05);
+        color:#d63384;
+        border:1px solid #ff4d94;
+    }
+
+    </style>
+    """, unsafe_allow_html=True)
+
+    st.markdown(
+        '<div class="category-title">🛍️ Shop By Category</div>',
+        unsafe_allow_html=True
+    )
+
+    # CATEGORY ICONS
+    cat_icons = {
+
+        "Saree": "👗",
+        "Dress": "👚",
+        "Jewellery": "💍",
+        "Necklace": "📿",
+        "Earrings": "✨",
+        "Bangles": "🪬",
+        "Kurti": "🌸",
+        "Lehenga": "👑",
+        "Kids": "🧸",
+        "Bags": "👜",
+        "Handbag": "👜",
+        "Beauty": "💄",
+        "Shoes": "👠",
+        "Watch": "⌚",
+        "Gift": "🎁",
+        "Home Decor": "🏠",
+        "Toy": "🚗",
+        "Car Toy": "🚘",
+        "Makeup": "💋",
+        "Perfume": "🌺",
+        "Festival": "🎉",
+        "Wedding": "💒",
+        "All": "🛍️"
+    }
+
+    all_categories = ["All"] + categories
+
+    # SAVE CATEGORY
+    if "selected_category" not in st.session_state:
+        st.session_state.selected_category = "All"
+
+    cat_cols = st.columns(4)
+
+    for i, cat in enumerate(all_categories):
+
+        icon = cat_icons.get(cat, "🛒")
+
+        with cat_cols[i % 4]:
+
+            st.markdown('<div class="category-card">', unsafe_allow_html=True)
+
+            if st.button(
+                f"{icon}\n{cat}",
+                key=f"cat_{cat}"
+            ):
+                st.session_state.selected_category = cat
+
+            st.markdown('</div>', unsafe_allow_html=True)
+
+    selected_category = st.session_state.selected_category
 
     if "cart" not in st.session_state:
         st.session_state.cart = []
