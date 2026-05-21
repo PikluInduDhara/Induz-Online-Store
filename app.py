@@ -206,7 +206,12 @@ if mode == "Admin":
 
             accepted_orders = len([
                 o for o in orders
-                if o["status"] in ["Packed","Shipped","Delivered"]
+                if o["status"] in [
+                    "Accepted",
+                    "Packed",
+                    "Shipped",
+                    "Delivered"
+                ]
             ])
 
             cancelled_orders = len([
@@ -217,7 +222,12 @@ if mode == "Admin":
             total_sales = sum(
                 int(o.get("total", 0))
                 for o in orders
-                if o["status"] in ["Packed","Shipped","Delivered"]
+                if o["status"] in [
+                    "Accepted",
+                    "Packed",
+                    "Shipped",
+                    "Delivered"
+                ]
                 and o["payment"] == "Yes"
             )
 
@@ -266,7 +276,12 @@ if mode == "Admin":
                     category_summary[category]["Pending"] += 1
 
                 # ACCEPTED
-                if o["status"] in ["Packed","Shipped","Delivered"]:
+                if o["status"] in [
+                    "Accepted",
+                    "Packed",
+                    "Shipped",
+                    "Delivered"
+                ]:
                     category_summary[category]["Accepted"] += 1
 
                 # CANCELLED
@@ -274,7 +289,12 @@ if mode == "Admin":
                     category_summary[category]["Cancelled"] += 1
 
                 # SALES
-                if o["status"] in ["Packed","Shipped","Delivered"] and o["payment"] == "Yes":
+                if o["status"] in [
+                    "Accepted",
+                    "Packed",
+                    "Shipped",
+                    "Delivered"
+                ] and o["payment"] == "Yes":
                     category_summary[category]["Sales"] += int(o.get("total", 0))
 
             dashboard_df = pd.DataFrame(category_summary).T
@@ -383,18 +403,21 @@ if mode == "Admin":
             st.markdown("""
             <style>
             .admin-header{
-                position:sticky;
-                top:70px;
+                position:fixed;
+                top:65px;
+                left:21rem;
+                right:0;
                 background:white;
-                z-index:998;
-                padding:10px 0;
+                z-index:999;
+                padding:10px 20px;
                 border-bottom:2px solid #ffd6e7;
+                box-shadow:0 2px 10px rgba(0,0,0,0.08);
             }
             </style>
             """, unsafe_allow_html=True)
 
             st.markdown('<div class="admin-header">', unsafe_allow_html=True)
-
+            
             cols = st.columns(len(headers))
 
             for col, h in zip(cols, headers):
@@ -410,11 +433,18 @@ if mode == "Admin":
                 """, unsafe_allow_html=True)
 
             st.markdown('</div>', unsafe_allow_html=True)
+            
+            st.markdown("<div style='height:80px'></div>", unsafe_allow_html=True)
 
             for i, o in enumerate(orders, start=2):
 
                 # ✅ ONLY CHANGE (Sales logic)
-                if o["status"] in ["Packed","Shipped","Delivered"] and o["payment"] == "Yes":
+                if o["status"] in [
+                    "Accepted",
+                    "Packed",
+                    "Shipped",
+                    "Delivered"
+                ] and o["payment"] == "Yes":
                     try:
                         total_sales += int(o["total"])
                     except:
@@ -446,6 +476,7 @@ if mode == "Admin":
                         "",
                         [
                             "Pending",
+                            "Accepted",
                             "Packed",
                             "Shipped",
                             "Delivered",
