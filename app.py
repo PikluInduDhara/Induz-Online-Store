@@ -206,7 +206,7 @@ if mode == "Admin":
 
             accepted_orders = len([
                 o for o in orders
-                if o["status"] == "Accepted"
+                if o["status"] in ["Packed","Shipped","Delivered"]
             ])
 
             cancelled_orders = len([
@@ -217,7 +217,7 @@ if mode == "Admin":
             total_sales = sum(
                 int(o.get("total", 0))
                 for o in orders
-                if o["status"] == "Accepted"
+                if o["status"] in ["Packed","Shipped","Delivered"]
                 and o["payment"] == "Yes"
             )
 
@@ -266,7 +266,7 @@ if mode == "Admin":
                     category_summary[category]["Pending"] += 1
 
                 # ACCEPTED
-                if o["status"] == "Accepted":
+                if o["status"] in ["Packed","Shipped","Delivered"]:
                     category_summary[category]["Accepted"] += 1
 
                 # CANCELLED
@@ -274,7 +274,7 @@ if mode == "Admin":
                     category_summary[category]["Cancelled"] += 1
 
                 # SALES
-                if o["status"] == "Accepted" and o["payment"] == "Yes":
+                if o["status"] in ["Packed","Shipped","Delivered"] and o["payment"] == "Yes":
                     category_summary[category]["Sales"] += int(o.get("total", 0))
 
             dashboard_df = pd.DataFrame(category_summary).T
@@ -379,15 +379,42 @@ if mode == "Admin":
             total_sales = 0
 
             headers = ["ID","Date","Customer","Phone","Address","Product","Qty","Value","Payment","Pay Ref","Del Ref","Status"]
+
+            st.markdown("""
+            <style>
+            .admin-header{
+                position:sticky;
+                top:70px;
+                background:white;
+                z-index:998;
+                padding:10px 0;
+                border-bottom:2px solid #ffd6e7;
+            }
+            </style>
+            """, unsafe_allow_html=True)
+
+            st.markdown('<div class="admin-header">', unsafe_allow_html=True)
+
             cols = st.columns(len(headers))
 
             for col, h in zip(cols, headers):
-                col.write(f"**{h}**")
+
+                col.markdown(f"""
+                <div style="
+                    font-weight:bold;
+                    color:#d63384;
+                    text-align:center;
+                ">
+                {h}
+                </div>
+                """, unsafe_allow_html=True)
+
+            st.markdown('</div>', unsafe_allow_html=True)
 
             for i, o in enumerate(orders, start=2):
 
                 # ✅ ONLY CHANGE (Sales logic)
-                if o["status"] == "Accepted" and o["payment"] == "Yes":
+                if o["status"] in ["Packed","Shipped","Delivered"] and o["payment"] == "Yes":
                     try:
                         total_sales += int(o["total"])
                     except:
@@ -415,7 +442,17 @@ if mode == "Admin":
                 if o["status"] == "Cancelled":
                     status = c[11].selectbox("", ["Cancelled"], key=f"status{i}")
                 else:
-                    status = c[11].selectbox("", ["Pending","Accepted","Cancelled"], key=f"status{i}")
+                    status = c[11].selectbox(
+                        "",
+                        [
+                            "Pending",
+                            "Packed",
+                            "Shipped",
+                            "Delivered",
+                            "Cancelled"
+                        ],
+                        key=f"status{i}"
+                    )
 
                 if st.button(f"Save {i}"):
 
@@ -438,11 +475,38 @@ if mode == "Admin":
                     orders_sheet.update_cell(i, 14, pay_ref)
                     orders_sheet.update_cell(i, 15, del_ref)
                     orders_sheet.update_cell(i, 12, status)
+                    
+                    customer_message = f"""
+                    🌸 SAJAI TOMAY UPDATE 🌸
 
+                    🆔 Order ID: {o['id']}
+
+                    📦 Status: {status}
+
+                    🚚 Tracking:
+                    {del_ref if del_ref else "Will be updated soon"}
+
+                    ❤️ Thank you for shopping with us
+                    """
+
+                    wa_link = (
+                        "https://wa.me/91"
+                        + str(o["phone"])
+                        + "?text="
+                        + urllib.parse.quote(customer_message)
+                    )
+
+                    st.success("✅ Update Saved")
+
+                    st.markdown(
+                        f"[📲 Send WhatsApp Update]({wa_link})"
+                    )
                     # 🔄 REFRESH
                     st.cache_data.clear()
-                    st.rerun()
-                    
+
+                    if st.button("🔄 Refresh Orders"):
+                        st.cache_data.clear()
+                        st.rerun()                    
             st.write(f"### 💰 Total Sales: ₹{total_sales}")
 
 # ================= CUSTOMER =================
@@ -797,7 +861,16 @@ else:
             if customer_orders:
 
                 for o in customer_orders:
+                    status_color = "#f39c12"
 
+                    if o["status"] == "Delivered":
+                        status_color = "green"
+
+                    elif o["status"] == "Cancelled":
+                        status_color = "red"
+
+                    elif o["status"] == "Shipped":
+                        status_color = "#3498db"
                     st.markdown(f"""
                     <div style="
                         background:linear-gradient(135deg,#fff,#fff7fb);
@@ -821,12 +894,12 @@ else:
                     <p><b>💰 Amount:</b> ₹{o['total']}</p>
 
                     <p><b>💳 Payment:</b> {o['payment']}</p>
-
+                    
                     <p>
                     <b>📦 Order Status:</b>
 
                     <span style="
-                        color:green;
+                        color:{status_color};
                         font-weight:bold;
                     ">
                     {o['status']}
@@ -837,6 +910,29 @@ else:
 
                     </div>
                     """, unsafe_allow_html=True)
+                    if o["status"] == "Delivered":
+
+                        st.markdown("### ⭐ Rate This Product")
+
+                        rating = st.slider(
+                            "Rate Product",
+                            1,
+                            5,
+                            5,
+                            key=f"rate_{o['id']}"
+                        )
+
+                        review = st.text_area(
+                            "Write Review",
+                            key=f"review_{o['id']}"
+                        )
+
+                        if st.button(
+                            "Submit Review",
+                            key=f"submit_review_{o['id']}"
+                        ):
+
+                            st.success("❤️ Thank you for your review!")
 
             else:
 
