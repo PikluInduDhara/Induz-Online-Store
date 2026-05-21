@@ -404,21 +404,21 @@ if mode == "Admin":
             <style>
             .admin-header{
                 position:fixed;
-                top:65px;
+                top:70px;
                 left:21rem;
                 right:0;
                 background:white;
-                z-index:999;
-                padding:10px 20px;
+                z-index:9999;
+                padding:12px 20px;
                 border-bottom:2px solid #ffd6e7;
-                box-shadow:0 2px 10px rgba(0,0,0,0.08);
+                box-shadow:0 4px 12px rgba(0,0,0,0.08);
             }
             </style>
             """, unsafe_allow_html=True)
 
             st.markdown('<div class="admin-header">', unsafe_allow_html=True)
             
-            cols = st.columns(len(headers))
+            cols = st.columns([0.7,1,1.3,1.2,2.2,1.2,0.6,0.8,1,1,1,1.2])
 
             for col, h in zip(cols, headers):
 
@@ -434,7 +434,7 @@ if mode == "Admin":
 
             st.markdown('</div>', unsafe_allow_html=True)
             
-            st.markdown("<div style='height:80px'></div>", unsafe_allow_html=True)
+            st.markdown("<div style='height:120px'></div>", unsafe_allow_html=True)
 
             for i, o in enumerate(orders, start=2):
 
