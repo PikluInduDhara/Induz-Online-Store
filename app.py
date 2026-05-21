@@ -655,9 +655,14 @@ else:
 
                                         image_carousel(
                                             image_urls=image_urls,
-                                            height=380,
+                                            height=500,
                                             key=f"carousel_{idx}_{col_num}"
                                         )
+                                        if st.button("🔍 View Full Image", key=f"zoom_{idx}_{col_num}"):
+
+                                            for img in image_urls:
+
+                                                st.image(img, use_container_width=True)
 
 
                             # -------- INFO --------
@@ -880,6 +885,18 @@ else:
             # -------- REMOVE BUTTON --------
             with col_remove:
 
+                # ➕ Increase Quantity
+                if st.button("➕", key=f"inc_{idx}"):
+
+                    stock_available = int(p.get("stock", 0))
+
+                    if q < stock_available:
+
+                        st.session_state.cart[idx] = (p, q + 1, size)
+
+                    st.rerun()
+
+                # ➖ Decrease Quantity
                 if st.button("➖", key=f"dec_{idx}"):
 
                     if q > 1:
@@ -889,10 +906,13 @@ else:
 
                     st.rerun()
 
+                # ❌ Remove Product
                 if st.button("❌", key=f"rem{idx}"):
 
                     st.session_state.cart.pop(idx)
+
                     st.session_state.page = "cart"
+
                     st.rerun()
 
             st.markdown("---")
@@ -1090,7 +1110,47 @@ else:
             message = st.session_state.order_message
             url = "https://wa.me/919007893365?text=" + urllib.parse.quote(message)
 
-            st.success("Order placed successfully!")
+            st.markdown(f"""
+            <div style="
+                background:linear-gradient(135deg,#fff0f6,#ffe6ef);
+                padding:30px;
+                border-radius:25px;
+                border:2px solid #ff4d94;
+                box-shadow:0 8px 24px rgba(0,0,0,0.08);
+                margin-bottom:25px;
+            ">
+
+            <h1 style="
+                color:#d63384;
+                text-align:center;
+            ">
+            ✅ ORDER PLACED SUCCESSFULLY
+            </h1>
+
+            <hr>
+
+            <h3>🆔 Order ID: {st.session_state.order_id}</h3>
+
+            <h3>💰 Total Amount: ₹{st.session_state.order_total}</h3>
+
+            <h3>📦 Status: Pending</h3>
+
+            <p style="
+                font-size:18px;
+                color:#555;
+                line-height:1.8;
+            ">
+
+            🎉 Thank you for shopping with us.<br><br>
+
+            📲 Please send your order to admin on WhatsApp.<br><br>
+
+            🚚 Our team will contact you soon regarding payment and delivery updates.
+
+            </p>
+
+            </div>
+            """, unsafe_allow_html=True)
             st.markdown(f"[📲 Send Order to Admin]({url})")
 
             doc = SimpleDocTemplate("invoice.pdf")
