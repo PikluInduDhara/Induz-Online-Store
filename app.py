@@ -121,7 +121,16 @@ st.markdown("""
         padding-bottom: 90px !important;
     }
 }
+.product-image img{
+    border-radius:18px;
+    transition:0.3s;
+    cursor:pointer;
+}
 
+.product-image img:hover{
+    transform:scale(1.04);
+    box-shadow:0 8px 20px rgba(0,0,0,0.15);
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -640,10 +649,11 @@ else:
                                     transition:0.3s;
                                 ">
                             """, unsafe_allow_html=True)
-                            col_img, col_info = st.columns([1.2,1.8])
+                            col_img, col_info = st.columns([1,1.4])
                         # -------- IMAGE --------
                             with col_img:
                                 
+                                    st.markdown('<div class="product-image">', unsafe_allow_html=True)
                                     # -------- SWIPE IMAGE CAROUSEL --------
 
                                     if images:
@@ -655,16 +665,10 @@ else:
 
                                         image_carousel(
                                             image_urls=image_urls,
-                                            height=500,
+                                            height=380,
                                             key=f"carousel_{idx}_{col_num}"
                                         )
-                                        if st.button("🔍 View Full Image", key=f"zoom_{idx}_{col_num}"):
-
-                                            for img in image_urls:
-
-                                                st.image(img, use_container_width=True)
-
-
+                                        st.markdown('</div>', unsafe_allow_html=True)
                             # -------- INFO --------
                             with col_info:
                                 st.markdown(f"""
