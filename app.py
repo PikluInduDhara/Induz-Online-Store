@@ -390,7 +390,26 @@ if mode == "Admin":
         if admin_page == "🚚 Orders":
             # -------- DELIVERY DASHBOARD --------
             st.subheader("Delivery Dashboard")
+            st.markdown("""
+            <style>
 
+            div[data-testid="stHorizontalBlock"] {
+                position: relative;
+                z-index: 1;
+            }
+
+            .admin-sticky {
+                position: sticky;
+                top: 75px;
+                background: white;
+                z-index: 999;
+                padding-top: 10px;
+                padding-bottom: 10px;
+                border-bottom: 2px solid #ffd6e7;
+            }
+
+            </style>
+            """, unsafe_allow_html=True)
             try:
                 orders = orders_sheet.get_all_records()
             except:
@@ -416,7 +435,7 @@ if mode == "Admin":
             </style>
             """, unsafe_allow_html=True)
 
-            st.markdown('<div class="admin-header">', unsafe_allow_html=True)
+            st.markdown('<div class="admin-sticky">', unsafe_allow_html=True)
             
             cols = st.columns([0.7,1,1.3,1.2,2.2,1.2,0.6,0.8,1,1,1,1.2])
 
@@ -434,7 +453,6 @@ if mode == "Admin":
 
             st.markdown('</div>', unsafe_allow_html=True)
             
-            st.markdown("<div style='height:120px'></div>", unsafe_allow_html=True)
 
             for i, o in enumerate(orders, start=2):
 
@@ -450,7 +468,7 @@ if mode == "Admin":
                     except:
                         pass
                     
-                c = st.columns(len(headers))
+                c = st.columns([0.7,1,1.3,1.2,2.2,1.2,0.6,0.8,1,1,1,1.2])
 
                 c[0].write(o["id"])
                 c[1].write(o["order_date"])
