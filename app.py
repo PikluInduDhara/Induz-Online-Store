@@ -568,7 +568,7 @@ else:
 
     banner_data = banner_sheet.get_all_records()
 
-    banner_urls = [b["Image"] for b in banner_data]
+    banner_urls = [get_image_url(b["Image"]) for b in banner_data]
 
     slider_html = """
     <style>
