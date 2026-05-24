@@ -562,44 +562,25 @@ if mode == "Admin":
 else:
 
     st.subheader("Products")
-    # -------- PREMIUM OFFER BANNER --------
-    st.markdown("""
-    <div style="
-        background:#ffe6ef;
-        padding:25px;
-        border-radius:18px;
-        border:2px solid #ff4d94;
-        margin-bottom:25px;
-        text-align:center;
-    ">
+    # -------- PREMIUM HERO BANNER --------
+    banner_images = [
 
-    <h1 style='color:#d63384; font-size:38px; margin-bottom:10px;'>
-    🎉 GRAND OPENING OFFER 🎉
-    </h1>
+        "images/banner1.png",
 
-    <div style="
-        background:white;
-        padding:18px;
-        border-radius:12px;
-        margin-top:15px;
-    ">
+        "images/banner2.png",
 
-    <p style='font-size:20px; color:#444; line-height:1.8;'>
+        "images/banner3.png"
 
-    🚚 <b>FREE SHIPPING</b><br>
-    06 Jun 2026 → 05 Jul 2026<br><br>
+    ]
 
-    🎁 Free Gifts on orders above <b>₹2000</b><br><br>
+    image_carousel(
+        image_urls=banner_images,
+        height=450,
+        interval=2000,
+        key="main_banner"
+    )
 
-    ✨ HAPPY SHOPPING ✨<br>
-
-    ❤️ <b>SAJAI TOMAY</b> ❤️
-
-    </p>
-
-    </div>
-    </div>
-    """, unsafe_allow_html=True)
+    products = products_sheet.get_all_records()
     products = products_sheet.get_all_records()
     products = pd.DataFrame(products).to_dict("records")
     # 🔥 SEARCH BAR
