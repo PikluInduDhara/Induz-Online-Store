@@ -592,6 +592,20 @@ else:
         animation:slide 15s infinite;
     }
 
+    /* MOBILE RESPONSIVE */
+    @media (max-width:768px){
+
+        .hero-slider{
+            height:220px;
+            border-radius:18px;
+        }
+
+        .hero-slider img{
+            height:220px;
+            object-fit:contain;
+        }
+    }
+
     """
 
     for i in range(len(banner_urls)):
