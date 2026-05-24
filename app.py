@@ -564,7 +564,7 @@ else:
     st.subheader("Products")
     # -------- DYNAMIC HERO SLIDER --------
 
-    banner_sheet = spreadsheet.worksheet("Banners")
+    banner_sheet = sheet.worksheet("Banners")
 
     banner_data = banner_sheet.get_all_records()
 
