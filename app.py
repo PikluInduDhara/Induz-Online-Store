@@ -562,22 +562,68 @@ if mode == "Admin":
 else:
 
     st.subheader("Products")
-    # -------- PREMIUM HERO BANNER --------
-    banner_images = [
+    # -------- DYNAMIC HERO SLIDER --------
 
-        "images/banner1.png",
+    banner_sheet = spreadsheet.worksheet("Banners")
 
-        "images/banner2.png",
+    banner_data = banner_sheet.get_all_records()
 
-        "images/banner3.png"
+    banner_urls = [b["Image"] for b in banner_data]
 
-    ]
+    slider_html = """
+    <style>
 
-    image_carousel(
-        image_urls=banner_images,
-        height=450,
-        key="main_banner"
-    )
+    .hero-slider{
+        width:100%;
+        height:450px;
+        overflow:hidden;
+        border-radius:25px;
+        position:relative;
+        margin-bottom:30px;
+        box-shadow:0 8px 20px rgba(0,0,0,0.12);
+    }
+
+    .hero-slider img{
+        width:100%;
+        height:450px;
+        object-fit:cover;
+        position:absolute;
+        opacity:0;
+        animation:slide 15s infinite;
+    }
+
+    """
+
+    for i in range(len(banner_urls)):
+        slider_html += f"""
+    .hero-slider img:nth-child({i+1}){{
+        animation-delay:{i*5}s;
+    }}
+    """
+
+    slider_html += """
+
+    @keyframes slide{
+
+    0%{opacity:0;}
+    10%{opacity:1;}
+    30%{opacity:1;}
+    40%{opacity:0;}
+    100%{opacity:0;}
+
+    }
+
+    </style>
+
+    <div class="hero-slider">
+    """
+
+    for url in banner_urls:
+        slider_html += f'<img src="{url}">'
+
+    slider_html += "</div>"
+
+    st.markdown(slider_html, unsafe_allow_html=True)
 
     products = products_sheet.get_all_records()
     products = products_sheet.get_all_records()
