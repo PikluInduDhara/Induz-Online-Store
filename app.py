@@ -43,9 +43,14 @@ creds = ServiceAccountCredentials.from_json_keyfile_dict(
 )
 client = gspread.authorize(creds)
 
-sheet = client.open("SajaiTomayDB")
-products_sheet = sheet.worksheet("products")
-orders_sheet = sheet.worksheet("orders")
+try:
+    sheet = client.open("SajaiTomayDB")
+    products_sheet = sheet.worksheet("products")
+    orders_sheet = sheet.worksheet("orders")
+
+except Exception as e:
+    st.error("⚠️ Google Sheet connection issue. Please refresh.")
+    st.stop()
 
 mode = st.sidebar.selectbox("Login Type", ["Customer", "Admin"])
 
@@ -1339,7 +1344,7 @@ else:
 
                     # THEN CLEAR CART
                     st.session_state.cart = []
-
+                    time.sleep(1)
                     st.rerun()
 
         if st.session_state.order_done and "last_order" in st.session_state:
