@@ -749,6 +749,8 @@ else:
         st.session_state.order_done = False
     if "page" not in st.session_state:
         st.session_state.page = "shop"
+    if "selected_product" not in st.session_state:
+        st.session_state.selected_product = None
     if "track_phone" not in st.session_state:
         st.session_state.track_phone = ""
     cart_qty = sum(q for _, q, _ in st.session_state.cart)
@@ -791,132 +793,181 @@ else:
                         card = st.container()
 
                         with card:
-                            st.markdown("""
+
+                                st.markdown("""
                                 <div style="
                                     background:white;
-                                    border-radius:25px;
-                                    padding:22px;
-                                    margin-bottom:28px;
-                                    border:none;
-                                    box-shadow:0 8px 24px rgba(0,0,0,0.12);
-                                    transition:0.3s;
+                                    border-radius:20px;
+                                    padding:16px;
+                                    margin-bottom:25px;
+                                    box-shadow:0 4px 14px rgba(0,0,0,0.08);
                                 ">
-                            """, unsafe_allow_html=True)
-                            col_img, col_info = st.columns([1,1.4])
-                        # -------- IMAGE --------
-                            with col_img:
-                                
-                                    st.markdown('<div class="product-image">', unsafe_allow_html=True)
-                                    # -------- SWIPE IMAGE CAROUSEL --------
+                                """, unsafe_allow_html=True)
 
-                                    if images:
+                                # PRODUCT IMAGE
+                                if images:
 
-                                        image_urls = [
-                                            get_image_url(img)
-                                            for img in images
-                                        ]
+                                    st.image(
+                                        get_image_url(images[0]),
+                                        use_container_width=True
+                                    )
 
-                                        image_carousel(
-                                            image_urls=image_urls,
-                                            height=380,
-                                            key=f"carousel_{idx}_{col_num}"
-                                        )
-                                        st.markdown('</div>', unsafe_allow_html=True)
-                            # -------- INFO --------
-                            with col_info:
+                                # PRODUCT NAME
                                 st.markdown(f"""
                                 <h3 style="
+                                    font-size:22px;
+                                    margin-top:10px;
+                                    margin-bottom:5px;
                                     color:#222;
-                                    font-size:28px;
-                                    font-weight:800;
-                                    margin-bottom:10px;
                                 ">
                                 {name}
                                 </h3>
                                 """, unsafe_allow_html=True)
+
+                                # PRICE
                                 st.markdown(f"""
                                 <h2 style="
                                     color:#ff3f6c;
-                                    font-weight:900;
+                                    font-size:30px;
                                     margin-top:0;
-                                    font-size:34px;
                                 ">
                                 ₹{cost}
                                 </h2>
                                 """, unsafe_allow_html=True)
 
-                                size_list = list(set([str(x.get("size", "NA")) for x in items]))
+                                # VIEW DETAILS BUTTON
+                                if st.button(
+                                    "👀 View Details",
+                                    key=f"view_{idx}_{col_num}",
+                                    use_container_width=True
+                                ):
 
-                                selected_size = st.selectbox(
-                                    "Select Size",
-                                    size_list,
-                                    key=f"size_{name}_{cost}"
-                                )
+                                    st.session_state.selected_product = {
+                                        "name": name,
+                                        "cost": cost,
+                                        "image": image,
+                                        "category": category,
+                                        "items": items
+                                    }
 
-                                selected_product = next(x for x in items if str(x.get("size")) == str(selected_size))
+                                    st.session_state.page = "product"
 
-                                stock = int(selected_product["stock"])
+                                    st.rerun()
 
-                                st.markdown(f"""
-                                <div style="
-                                    background:#e8fff0;
-                                    color:#008a3d;
-                                    padding:8px 12px;
-                                    border-radius:12px;
-                                    font-weight:bold;
-                                    margin-bottom:12px;
-                                    display:inline-block;
-                                ">
-                                ✅ In Stock: {stock}
-                                </div>
-                                """, unsafe_allow_html=True)
+                                st.markdown("</div>", unsafe_allow_html=True)
 
-                            # -------- QTY + ADD --------
-                            if stock > 0:
-                                col1, col2 = st.columns([1,1])
+    # -------- PRODUCT DETAILS PAGE --------
 
-                                with col1:
+    if st.session_state.page == "product":
 
-                                    qty = st.number_input(
-                                        "Quantity",
-                                        min_value=1,
-                                        max_value=stock,
-                                        value=1,
-                                        key=f"qty_{name}_{cost}"
-                                    )
+        p = st.session_state.selected_product
 
-                                with col2:
+        if p is None:
+            st.session_state.page = "shop"
+            st.rerun()
 
-                                    st.write("")   # spacing
-                                    st.write("")
+        name = p["name"]
+        cost = p["cost"]
+        image = p["image"]
+        items = p["items"]
 
-                                    if st.button(
-                                        "🛒 ADD TO BAG",
-                                        key=f"add_{name}_{cost}",
-                                        use_container_width=True
-                                    ):
+        images = [img.strip() for img in image.split(",") if img.strip()]
 
-                                        found = False
+        st.button("⬅ Back", on_click=lambda: st.session_state.update({"page":"shop"}))
 
-                                        for i, (cp, cq, cs) in enumerate(st.session_state.cart):
+        col1, col2 = st.columns([1.2,1])
 
-                                            if cp["name"] == selected_product["name"] and cs == selected_size:
+        # LEFT SIDE IMAGE
+        with col1:
 
-                                                new_qty = min(cq + qty, stock)
+            if images:
 
-                                                st.session_state.cart[i] = (cp, new_qty, cs)
+                image_urls = [
+                    get_image_url(img)
+                    for img in images
+                ]
 
-                                                found = True
-                                                break
+                image_carousel(
+                    image_urls=image_urls,
+                    height=500,
+                    key="product_page_carousel"
+                )
 
-                                        if not found:
-                                            st.session_state.cart.append((selected_product, qty, selected_size))
+        # RIGHT SIDE DETAILS
+        with col2:
 
-                                        st.rerun()
-                            else:
-                                st.write("❌ Out of Stock")
+            st.markdown(f"""
+            <h1 style="
+                color:#222;
+                font-size:42px;
+                font-weight:800;
+            ">
+            {name}
+            </h1>
+            """, unsafe_allow_html=True)
 
-                            st.markdown("</div>", unsafe_allow_html=True)
+            st.markdown(f"""
+            <h1 style="
+                color:#ff3f6c;
+                font-size:48px;
+                font-weight:900;
+            ">
+            ₹{cost}
+            </h1>
+            """, unsafe_allow_html=True)
+
+            size_list = list(set([
+                str(x.get("size","NA"))
+                for x in items
+            ]))
+
+            selected_size = st.selectbox(
+                "Select Size",
+                size_list
+            )
+
+            selected_product = next(
+                x for x in items
+                if str(x.get("size")) == str(selected_size)
+            )
+
+            stock = int(selected_product["stock"])
+
+            st.success(f"✅ In Stock: {stock}")
+
+            qty = st.number_input(
+                "Quantity",
+                min_value=1,
+                max_value=stock,
+                value=1
+            )
+
+            if st.button(
+                "🛒 ADD TO BAG",
+                use_container_width=True
+            ):
+
+                found = False
+
+                for i, (cp, cq, cs) in enumerate(st.session_state.cart):
+
+                    if cp["name"] == selected_product["name"] and cs == selected_size:
+
+                        st.session_state.cart[i] = (
+                            cp,
+                            cq + qty,
+                            cs
+                        )
+
+                        found = True
+                        break
+
+                if not found:
+                    st.session_state.cart.append(
+                        (selected_product, qty, selected_size)
+                    )
+
+                st.success("✅ Added To Bag")
     # -------- ORDER TRACKING PAGE --------
 
     if st.session_state.page == "tracking":
@@ -1095,57 +1146,57 @@ else:
 
                     st.rerun()
 
-                # ❌ Remove Product
-                if st.button("❌", key=f"rem{idx}"):
+            # ❌ Remove Product
+            if st.button("❌", key=f"rem{idx}"):
 
-                    st.session_state.cart.pop(idx)
+                st.session_state.cart.pop(idx)
 
-                    st.session_state.page = "cart"
+                st.session_state.page = "cart"
 
-                    st.rerun()
+                st.rerun()
 
             st.markdown("---")
 
-        st.write(f"Total ₹{total}")
-        name = st.text_input("Name")
-        phone = st.text_input("Phone")
+    st.write(f"Total ₹{total}")
+    name = st.text_input("Name")
+    phone = st.text_input("Phone")
 
-        pincode = st.text_input("PIN Code")
+    pincode = st.text_input("PIN Code")
 
-        state = ""
+    state = ""
 
-        district = ""
-        state = ""
-        city = ""
+    district = ""
+    state = ""
+    city = ""
 
-        if len(pincode) == 6:
+    if len(pincode) == 6:
 
-            try:
-                nomi = pgeocode.Nominatim("in")
+        try:
+            nomi = pgeocode.Nominatim("in")
 
-                location = nomi.query_postal_code(pincode)
+            location = nomi.query_postal_code(pincode)
 
-                district = str(location.county_name or "")
-                state = str(location.state_name or "")
+            district = str(location.county_name or "")
+            state = str(location.state_name or "")
 
-                if state != "nan":
+            if state != "nan":
 
-                    st.success(f"📍 {district}, {state}")
+                st.success(f"📍 {district}, {state}")
 
-                    city = st.text_input(
-                        "City / Area",
-                        value=district
-                    )
+                city = st.text_input(
+                    "City / Area",
+                    value=district
+                )
 
-                else:
-                    st.error("Invalid PIN Code")
+            else:
+                st.error("Invalid PIN Code")
 
-            except:
-                st.error("Unable to detect location")
+        except:
+            st.error("Unable to detect location")
 
-        addr = st.text_area("Address")
+    addr = st.text_area("Address")
 
-        if st.button("Place Order"):
+    if st.button("Place Order"):
 
             if not st.session_state.cart:
                 st.error("⚠️ Please add at least 1 product before placing order")
@@ -1291,7 +1342,7 @@ else:
 
                 st.rerun()
 
-        if st.session_state.order_done and "last_order" in st.session_state:
+    if st.session_state.order_done and "last_order" in st.session_state:
 
         # ✅ ADD THIS LINE HERE
             if "order_id" not in st.session_state:
