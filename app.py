@@ -589,7 +589,7 @@ else:
         object-fit:cover;
         position:absolute;
         opacity:0;
-        animation:slide 15s infinite;
+        animation:slide """ + str(len(banner_urls)*5) + """s infinite;
     }
 
     /* MOBILE RESPONSIVE */
