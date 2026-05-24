@@ -131,6 +131,41 @@ st.markdown("""
     transform:scale(1.04);
     box-shadow:0 8px 20px rgba(0,0,0,0.15);
 }
+/* FLOATING CART */
+
+.floating-cart{
+    position:fixed;
+    bottom:25px;
+    right:25px;
+    background:#ff3f6c;
+    color:white;
+    width:65px;
+    height:65px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:26px;
+    font-weight:bold;
+    box-shadow:0 8px 24px rgba(0,0,0,0.25);
+    z-index:999999;
+    animation:cartPulse 1.8s infinite;
+}
+
+@keyframes cartPulse{
+
+    0%{
+        transform:scale(1);
+    }
+
+    50%{
+        transform:scale(1.08);
+    }
+
+    100%{
+        transform:scale(1);
+    }
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -161,6 +196,11 @@ with nav3:
 with nav4:
 
     st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown(f"""
+    <div class="floating-cart">
+    🛒 {cart_qty}
+    </div>
+    """, unsafe_allow_html=True)
 
     if st.button(f"🛒 Cart ({cart_qty})", use_container_width=True):
 
