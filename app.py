@@ -131,40 +131,25 @@ st.markdown("""
     transform:scale(1.04);
     box-shadow:0 8px 20px rgba(0,0,0,0.15);
 }
-/* FLOATING CART */
-
-.floating-cart{
-    position:fixed;
-    bottom:25px;
-    right:25px;
-    background:#ff3f6c;
-    color:white;
-    width:65px;
-    height:65px;
-    border-radius:50%;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:26px;
-    font-weight:bold;
-    box-shadow:0 8px 24px rgba(0,0,0,0.25);
-    z-index:999999;
-    animation:cartPulse 1.8s infinite;
+div[data-testid="column"]:nth-of-type(4) button {
+    position: fixed !important;
+    top: 12px !important;
+    right: 20px !important;
+    z-index: 999999 !important;
+    background: #ff3f6c !important;
+    color: white !important;
+    border-radius: 50px !important;
+    font-weight: bold !important;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.25) !important;
 }
 
-@keyframes cartPulse{
-
-    0%{
-        transform:scale(1);
-    }
-
-    50%{
-        transform:scale(1.08);
-    }
-
-    100%{
-        transform:scale(1);
-    }
+div[data-testid="column"]:nth-of-type(5) button {
+    position: fixed !important;
+    top: 12px !important;
+    right: 170px !important;
+    z-index: 999999 !important;
+    border-radius: 50px !important;
+    font-weight: bold !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -202,16 +187,27 @@ with nav4:
     </div>
     """, unsafe_allow_html=True)
 
-    if st.button(f"🛒 Cart ({cart_qty})", use_container_width=True):
+    cart_col1, cart_col2 = st.columns(2)
 
-        st.session_state.page = "cart"
+    with cart_col1:
 
-        st.rerun()
-    if st.button("📦 Track Order", use_container_width=True):
+        if st.button(
+            f"🛒 Cart ({cart_qty})",
+            key="floating_cart_btn"
+        ):
 
-        st.session_state.page = "tracking"
+            st.session_state.page = "cart"
+            st.rerun()
 
-        st.rerun()
+    with cart_col2:
+
+        if st.button(
+            "📦 Track",
+            key="track_btn"
+        ):
+
+            st.session_state.page = "tracking"
+            st.rerun()
 
 st.markdown("</div>", unsafe_allow_html=True)
 
