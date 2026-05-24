@@ -131,26 +131,6 @@ st.markdown("""
     transform:scale(1.04);
     box-shadow:0 8px 20px rgba(0,0,0,0.15);
 }
-div[data-testid="column"]:nth-of-type(4) button {
-    position: fixed !important;
-    top: 12px !important;
-    right: 20px !important;
-    z-index: 999999 !important;
-    background: #ff3f6c !important;
-    color: white !important;
-    border-radius: 50px !important;
-    font-weight: bold !important;
-    box-shadow: 0 6px 18px rgba(0,0,0,0.25) !important;
-}
-
-div[data-testid="column"]:nth-of-type(5) button {
-    position: fixed !important;
-    top: 12px !important;
-    right: 170px !important;
-    z-index: 999999 !important;
-    border-radius: 50px !important;
-    font-weight: bold !important;
-}
 </style>
 """, unsafe_allow_html=True)
 
@@ -181,33 +161,17 @@ with nav3:
 with nav4:
 
     st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown(f"""
-    <div class="floating-cart">
-    🛒 {cart_qty}
-    </div>
-    """, unsafe_allow_html=True)
 
-    cart_col1, cart_col2 = st.columns(2)
+    if st.button(f"🛒 Cart ({cart_qty})", use_container_width=True):
 
-    with cart_col1:
+        st.session_state.page = "cart"
 
-        if st.button(
-            f"🛒 Cart ({cart_qty})",
-            key="floating_cart_btn"
-        ):
+        st.rerun()
+    if st.button("📦 Track Order", use_container_width=True):
 
-            st.session_state.page = "cart"
-            st.rerun()
+        st.session_state.page = "tracking"
 
-    with cart_col2:
-
-        if st.button(
-            "📦 Track",
-            key="track_btn"
-        ):
-
-            st.session_state.page = "tracking"
-            st.rerun()
+        st.rerun()
 
 st.markdown("</div>", unsafe_allow_html=True)
 
