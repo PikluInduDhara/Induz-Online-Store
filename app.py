@@ -576,7 +576,6 @@ else:
     image_carousel(
         image_urls=banner_images,
         height=450,
-        interval=2000,
         key="main_banner"
     )
 
