@@ -47,10 +47,22 @@ try:
     sheet = client.open("SajaiTomayDB")
     products_sheet = sheet.worksheet("products")
     orders_sheet = sheet.worksheet("orders")
+    @st.cache_data(ttl=60)
+    def load_products():
+        return products_sheet.get_all_records()
 
+    @st.cache_data(ttl=60)
+    def load_orders():
+        return orders_sheet.get_all_records()
+
+    @st.cache_data(ttl=60)
+    def load_banners():
+        banner_sheet = sheet.worksheet("Banners")
+        return banner_sheet.get_all_records()
 except Exception as e:
     st.error("⚠️ Google Sheet connection issue. Please refresh.")
     st.stop()
+
 
 mode = st.sidebar.selectbox("Login Type", ["Customer", "Admin"])
 
@@ -200,7 +212,7 @@ if mode == "Admin":
 
             st.header("📊 Business Dashboard")
 
-            orders = orders_sheet.get_all_records()
+            orders = load_orders()
 
             total_orders = len(orders)
 
@@ -250,7 +262,7 @@ if mode == "Admin":
 
             category_summary = {}
 
-            products_data = products_sheet.get_all_records()
+            products_data = load_products()
 
             for o in orders:
 
@@ -323,6 +335,7 @@ if mode == "Admin":
             )
 
             if st.button("Add Product"):
+                st.cache_data.clear()
 
                 if new_name and new_price:
 
@@ -340,7 +353,7 @@ if mode == "Admin":
 
                     image_name = ",".join(image_names)
                     products_sheet.append_row([
-                        len(products_sheet.get_all_records())+1,
+                        len(load_products())+1,
                         new_name,
                         new_price,
                         new_sizes,      # ✅ size column
@@ -350,11 +363,12 @@ if mode == "Admin":
                     ])
 
                     st.success("Product Added")
+                    st.cache_data.clear()
                     st.rerun()
 
             # -------- PRODUCTS --------
             st.subheader("Products")
-            products = products_sheet.get_all_records()
+            products = load_products()
 
             for i, p in enumerate(products, start=2):
 
@@ -416,7 +430,7 @@ if mode == "Admin":
             </style>
             """, unsafe_allow_html=True)
             try:
-                orders = orders_sheet.get_all_records()
+                orders = load_orders()
             except:
                 st.error("⚠️ Sheet structure broken. Please fix columns in Google Sheet.")
                 st.stop()
@@ -515,7 +529,7 @@ if mode == "Admin":
                         st.warning("❌ Cancelled orders cannot be modified")
                         st.stop()
 
-                    products_latest = products_sheet.get_all_records()
+                    products_latest = load_products()
 
                     # ✅ STOCK RETURN ONLY ON FIRST CANCEL
                     if status == "Cancelled" and o["status"] != "Cancelled":
@@ -557,11 +571,13 @@ if mode == "Admin":
                     )
                     # 🔄 REFRESH
                     st.cache_data.clear()
-
-                    if st.button("🔄 Refresh Orders"):
-                        st.cache_data.clear()
-                        st.rerun()                    
+                    st.rerun()
+                   
             st.write(f"### 💰 Total Sales: ₹{total_sales}")
+            
+            if st.button("🔄 Refresh Orders"):
+                st.cache_data.clear()
+                st.rerun() 
 
 # ================= CUSTOMER =================
 else:
@@ -569,84 +585,87 @@ else:
     st.subheader("Products")
     # -------- DYNAMIC HERO SLIDER --------
 
-    banner_sheet = sheet.worksheet("Banners")
-
-    banner_data = banner_sheet.get_all_records()
-
-    banner_urls = [get_image_url(b["Image"]) for b in banner_data]
-
-    slider_html = """
-    <style>
-
-    .hero-slider{
-        width:100%;
-        height:450px;
-        overflow:hidden;
-        border-radius:25px;
-        position:relative;
-        margin-bottom:30px;
-        box-shadow:0 8px 20px rgba(0,0,0,0.12);
-    }
-
-    .hero-slider img{
-        width:100%;
-        height:450px;
-        object-fit:cover;
-        position:absolute;
-        opacity:0;
-        animation:slide """ + str(len(banner_urls)*5) + """s infinite;
-    }
-
-    /* MOBILE RESPONSIVE */
-    @media (max-width:768px){
+    try:
+        banner_data = load_banners()
+        banner_urls = [
+            get_image_url(b["Image"])
+            for b in banner_data
+            if b.get("Image")
+        ]
+    except:
+        banner_urls = []
+    if banner_urls:
+        slider_html = """
+        <style>
 
         .hero-slider{
-            height:220px;
-            border-radius:18px;
+            width:100%;
+            height:450px;
+            overflow:hidden;
+            border-radius:25px;
+            position:relative;
+            margin-bottom:30px;
+            box-shadow:0 8px 20px rgba(0,0,0,0.12);
         }
 
         .hero-slider img{
-            height:220px;
-            object-fit:contain;
+            width:100%;
+            height:450px;
+            object-fit:cover;
+            position:absolute;
+            opacity:0;
+            animation:slide """ + str(len(banner_urls)*5) + """s infinite;
         }
-    }
 
-    """
+        /* MOBILE RESPONSIVE */
+        @media (max-width:768px){
 
-    for i in range(len(banner_urls)):
-        slider_html += f"""
-    .hero-slider img:nth-child({i+1}){{
-        animation-delay:{i*5}s;
-    }}
-    """
+            .hero-slider{
+                height:220px;
+                border-radius:18px;
+            }
 
-    slider_html += """
+            .hero-slider img{
+                height:220px;
+                object-fit:contain;
+            }
+        }
 
-    @keyframes slide{
+        """
 
-    0%{opacity:0;}
-    10%{opacity:1;}
-    30%{opacity:1;}
-    40%{opacity:0;}
-    100%{opacity:0;}
+        for i in range(len(banner_urls)):
+            slider_html += f"""
+        .hero-slider img:nth-child({i+1}){{
+            animation-delay:{i*5}s;
+        }}
+        """
 
-    }
+        slider_html += """
 
-    </style>
+        @keyframes slide{
 
-    <div class="hero-slider">
-    """
+        0%{opacity:0;}
+        10%{opacity:1;}
+        30%{opacity:1;}
+        40%{opacity:0;}
+        100%{opacity:0;}
 
-    for url in banner_urls:
-        slider_html += f'<img src="{url}">'
+        }
 
-    slider_html += "</div>"
+        </style>
 
-    st.markdown(slider_html, unsafe_allow_html=True)
+        <div class="hero-slider">
+        """
 
-    products = products_sheet.get_all_records()
-    products = products_sheet.get_all_records()
-    products = pd.DataFrame(products).to_dict("records")
+        for url in banner_urls:
+            slider_html += f'<img src="{url}">'
+
+        slider_html += "</div>"
+        if banner_urls:
+            st.markdown(slider_html, unsafe_allow_html=True)
+
+    products = load_products()
+
     # 🔥 SEARCH BAR
     search_text = st.text_input("🔍 Search Product")
 
@@ -814,7 +833,7 @@ else:
 
                                     st.image(
                                         get_image_url(images[0]),
-                                        use_container_width=True
+                                        width=220
                                     )
 
                                 # PRODUCT NAME
@@ -880,7 +899,7 @@ else:
 
         st.button("⬅ Back", on_click=lambda: st.session_state.update({"page":"shop"}))
 
-        col1, col2 = st.columns([1.2,1])
+        col1, col2 = st.columns([1,1])
 
         # LEFT SIDE IMAGE
         with col1:
@@ -894,7 +913,7 @@ else:
 
                 image_carousel(
                     image_urls=image_urls,
-                    height=500,
+                    height=420,
                     key="product_page_carousel"
                 )
 
@@ -973,9 +992,9 @@ else:
                         (selected_product, qty, selected_size)
                     )
 
-                st.toast("✅ Added To Bag")
+                st.session_state.page = "cart"
 
-                time.sleep(0.5)
+                time.sleep(0.3)
 
                 st.rerun()
     # -------- ORDER TRACKING PAGE --------
@@ -1000,7 +1019,7 @@ else:
 
         if st.session_state.track_phone:
 
-            orders = orders_sheet.get_all_records()
+            orders = load_orders()
 
             customer_orders = [
                 o for o in orders
@@ -1087,7 +1106,8 @@ else:
             else:
 
                 st.warning("No orders found")
-            st.stop()
+            
+            
     if st.session_state.page == "cart":
         if not st.session_state.cart and not st.session_state.order_done:
 
@@ -1207,6 +1227,10 @@ else:
         addr = st.text_area("Address")
 
         if st.button("Place Order"):
+            
+                if st.session_state.order_done:
+                    st.warning("✅ Order already placed")
+                    st.stop()
 
                 if not st.session_state.cart:
                     st.error("⚠️ Please add at least 1 product before placing order")
@@ -1221,12 +1245,15 @@ else:
                 else:
 
                     try:
-                        orders = orders_sheet.get_all_records()
+                        orders = load_orders()
                     except:
-                        st.error("⚠️ Sheet structure broken. Please fix columns in Google Sheet.")
+                        st.error("⚠️ Server busy. Please try again.")
                         st.stop()
+
                     order_id = len(orders) + 1
 
+                    products_latest = load_products()
+                    
                     for p, q, size in st.session_state.cart:
 
                         item_total = int(p["cost"]) * q
@@ -1250,7 +1277,6 @@ else:
                             time.strftime("%Y-%m-%d")
                         ])
 
-                        products_latest = products_sheet.get_all_records()
 
                         for k, prod in enumerate(products_latest, start=2):
                             if prod["name"] == p["name"] and str(prod.get("size")) == str(size):
@@ -1349,224 +1375,250 @@ else:
 
                     # THEN CLEAR CART
                     st.session_state.cart = []
-                    time.sleep(1)
+
+                    st.session_state.page = "cart"
+
                     st.rerun()
 
-        if st.session_state.order_done and "last_order" in st.session_state:
+        if (
+            st.session_state.get("order_done")
+            and "last_order" in st.session_state
+        ):
 
             # ✅ ADD THIS LINE HERE
-                if "order_id" not in st.session_state:
-                    st.stop()
-                message = st.session_state.order_message
-                url = "https://wa.me/919007893365?text=" + urllib.parse.quote(message)
+            if "order_id" not in st.session_state:
+                st.stop()
+            message = st.session_state.order_message
+            url = "https://wa.me/919007893365?text=" + urllib.parse.quote(message)
 
-                st.markdown(f"""
-                <div style="
-                    background:linear-gradient(135deg,#fff0f6,#ffe6ef);
-                    padding:30px;
-                    border-radius:25px;
-                    border:2px solid #ff4d94;
-                    box-shadow:0 8px 24px rgba(0,0,0,0.08);
-                    margin-bottom:25px;
-                ">
+            st.markdown(f"""
+            <div style="
+                background:linear-gradient(135deg,#fff0f6,#ffe6ef);
+                padding:30px;
+                border-radius:25px;
+                border:2px solid #ff4d94;
+                box-shadow:0 8px 24px rgba(0,0,0,0.08);
+                margin-bottom:25px;
+            ">
 
-                <h1 style="
-                    color:#d63384;
-                    text-align:center;
-                ">
-                ✅ ORDER PLACED SUCCESSFULLY
-                </h1>
+            <h1 style="
+                color:#d63384;
+                text-align:center;
+            ">
+            ✅ ORDER PLACED SUCCESSFULLY
+            </h1>
 
-                <hr>
+            <hr>
 
-                <h3>🆔 Order ID: {st.session_state.order_id}</h3>
+            <h3>🆔 Order ID: {st.session_state.order_id}</h3>
 
-                <h3>💰 Total Amount: ₹{st.session_state.order_total}</h3>
+            <h3>💰 Total Amount: ₹{st.session_state.order_total}</h3>
 
-                <h3>📦 Status: Pending</h3>
+            <h3>📦 Status: Pending</h3>
 
-                <p style="
-                    font-size:18px;
-                    color:#555;
-                    line-height:1.8;
-                ">
+            <p style="
+                font-size:18px;
+                color:#555;
+                line-height:1.8;
+            ">
 
-                🎉 Thank you for shopping with us.<br><br>
+            🎉 Thank you for shopping with us.<br><br>
 
-                📲 Please send your order to admin on WhatsApp.<br><br>
+            📲 Please send your order to admin on WhatsApp.<br><br>
 
-                🚚 Our team will contact you soon regarding payment and delivery updates.
+            🚚 Our team will contact you soon regarding payment and delivery updates.
 
-                </p>
+            </p>
 
-                </div>
-                """, unsafe_allow_html=True)
-                st.markdown(f"[📲 Send Order to Admin]({url})")
+            </div>
+            """, unsafe_allow_html=True)
+            st.markdown(f"[📲 Send Order to Admin]({url})")
 
-                doc = SimpleDocTemplate("invoice.pdf")
-                styles = getSampleStyleSheet()
+            doc = SimpleDocTemplate("invoice.pdf")
+            styles = getSampleStyleSheet()
 
-                extra_text = """
-                <br/><br/>-------------------------------------<br/><br/>
+            extra_text = """
+            <br/><br/>-------------------------------------<br/><br/>
 
-                Return or refund is only applicable if you receive any broken or discolored product<br/><br/>
+            Return or refund is only applicable if you receive any broken or discolored product<br/><br/>
 
-                DISPATCH TIME 5-7 DAYS<br/><br/>
+            DISPATCH TIME 5-7 DAYS<br/><br/>
 
-                PLEASE EXPECT DELIVERY WITHIN 10-12 WORKING DAYS🙏♥️<br/>
-                HAPPY SHOPPING<br/>
-                ✨SAJAI TOMAY❤️<br/><br/>
+            PLEASE EXPECT DELIVERY WITHIN 10-12 WORKING DAYS🙏♥️<br/>
+            HAPPY SHOPPING<br/>
+            ✨SAJAI TOMAY❤️<br/><br/>
 
-                -------------------------------------<br/><br/>
+            -------------------------------------<br/><br/>
 
-                SAJAI TOMAY 🌻Everyone will be replied to as soon as possible🙏👇<br/><br/>
+            SAJAI TOMAY 🌻Everyone will be replied to as soon as possible🙏👇<br/><br/>
 
-                ALL OVER 🇮🇳INDIA🇮🇳 DELIVERY AVAILABLE<br/><br/>
+            ALL OVER 🇮🇳INDIA🇮🇳 DELIVERY AVAILABLE<br/><br/>
 
-                My Address:<br/>
-                Howrah Kona, Tentultala 711114<br/>
-                (near sagor Toto garage before piyara bagan)<br/><br/>
+            My Address:<br/>
+            Howrah Kona, Tentultala 711114<br/>
+            (near sagor Toto garage before piyara bagan)<br/><br/>
 
-                📞 calling no. +91 9007893365 (call time 3pm to 9pm)<br/><br/>
+            📞 calling no. +91 9007893365 (call time 3pm to 9pm)<br/><br/>
 
-                🚚 Shipping:<br/>
-                West Bengal → 50 (prepaid)<br/>
-                Outside WB → 80 (prepaid)<br/><br/>
+            🚚 Shipping:<br/>
+            West Bengal → 50 (prepaid)<br/>
+            Outside WB → 80 (prepaid)<br/><br/>
 
-                🚫 COD not available<br/><br/>
+            🚫 COD not available<br/><br/>
 
-                📌 For booking:<br/>
-                Please take a screenshot and send your full address<br/><br/>
+            📌 For booking:<br/>
+            Please take a screenshot and send your full address<br/><br/>
 
-                🌻 Shipping charges may change for Kurti/Dresses
-                        """
-                elements = []
-
-                # -------- LOGO --------
-                if os.path.exists("images/logo.png"):
-                    elements.append(Image("images/logo.png", width=120, height=120))
-
-                elements.append(Spacer(1, 10))
-
-                # -------- TITLE --------
-                elements.append(Paragraph("<b>SAJAI TOMAY INVOICE</b>", styles["Title"]))
-                elements.append(Spacer(1, 15))
-
-                # -------- CUSTOMER DETAILS --------
-                elements.append(Paragraph(f"<b>Order ID:</b> {st.session_state.order_id}", styles["Normal"]))
-                elements.append(Paragraph(f"<b>Name:</b> {st.session_state.customer_name}", styles["Normal"]))
-                elements.append(Paragraph(f"<b>Phone:</b> {st.session_state.customer_phone}", styles["Normal"]))
-                elements.append(
-                    Paragraph(
-                        f"<b>Address:</b> "
-                        f"{st.session_state.customer_city}, "
-                        f"{st.session_state.customer_state} - "
-                        f"{st.session_state.customer_pincode}<br/>"
-                        f"{st.session_state.customer_address}",
-                        styles["Normal"]
-                    )
-                )
-                elements.append(Spacer(1, 15))
-
-                # -------- TABLE (FLIPKART STYLE) --------
-                table_data = [["Product", "Qty", "Price", "Total"]]
-
-                for p, q, size in st.session_state.last_order:
-                    price = int(p["cost"])
-                    total_item = price * q
-                    table_data.append([f"{p['name']} ({size})", q, f"₹{price}", f"₹{total_item}"])      
-
-                table = Table(table_data)
-
-                table.setStyle(TableStyle([
-                    ("BACKGROUND", (0,0), (-1,0), colors.pink),
-                    ("TEXTCOLOR", (0,0), (-1,0), colors.white),
-                    ("GRID", (0,0), (-1,-1), 1, colors.black),
-                    ("ALIGN", (1,1), (-1,-1), "CENTER"),
-                ]))
-
-                elements.append(table)
-                elements.append(Spacer(1, 15))
-
-                # -------- TOTAL --------
-                elements.append(Paragraph(f"<b>Total Amount: ₹{st.session_state.order_total}</b>", styles["Normal"]))
-                elements.append(Spacer(1, 20))
-
-                # -------- PAYMENT MESSAGE --------
-                elements.append(Paragraph(
+            🌻 Shipping charges may change for Kurti/Dresses
                     """
-                    <b>👉 ✨ WELCOME TO “SAJAI TOMAY” ❤️<br/><br/>
+            elements = []
 
-                    This page will serve you your dream jewellery and stylish dresses at best quality and best price with love 💖<br/><br/>
+            # -------- LOGO --------
+            if os.path.exists("images/logo.png"):
+                elements.append(Image("images/logo.png", width=120, height=120))
 
-                    Our team will contact you for further delivery related updates once you make the payment as per WhatsApp confirmation.<br/><br/>
+            elements.append(Spacer(1, 10))
 
-                    ▪️ ⏳ Expect reply within 2–3 business days after dropping the message.<br/><br/>
+            # -------- TITLE --------
+            elements.append(Paragraph("<b>SAJAI TOMAY INVOICE</b>", styles["Title"]))
+            elements.append(Spacer(1, 15))
 
-                    ▪️ 📞 If no reply within 2–3 days, call: 9007893365<br/>
-                    (After placing the order if you don’t get any reply or confirmation within 2–3 business days)<br/><br/>
-
-                    ◾ 💖 ALL OF US FROM “SAJAI TOMAY” ARE WORKING HARD EVERYDAY TO PROVIDE YOU THE BEST PRODUCT OR SERVICE.<br/><br/>
-
-                    ◾ RULES & REGULATIONS:<br/>
-                    ▪️ This is a complete online boutique.<br/>
-                    ▪️ We don’t have any shop or outlet.<br/>
-                    ▪️ ❌ No COD available.<br/>
-                    ▪️ 💳 Payments only via Google Pay, PhonePe, Paytm & Bank Transfer.<br/>
-                    ▪️ 🚫 If payment is not made within 2 days, order will be cancelled automatically.<br/>
-                    ▪️ 🎥 After receiving parcel, Opening Video is MUST.<br/>
-                    ❌ Without opening video, no complaints will be accepted.<br/>
-                    👉 Issue must be clearly visible in the video.<br/><br/>
-
-                    ▪️ 🌍 We ship worldwide.<br/><br/>
-
-                    ▪️ 🚚 Shipping charge all over India: ₹60/- (Except Tripura & Assam)<br/>
-                    ▪️ 🚚 Tripura & Assam: ₹80/-<br/>
-                    ▪️ 👗 Shipping may change for Kurti/Dresses.<br/>
-                    🌍 International shipping varies by location.<br/><br/>
-
-                    🎁 Purchase above ₹2000/- & get free gifts from us.<br/><br/>
-
-                    ▪️ ❌ No refund facility available.<br/>
-                    ✅ Replacement / Repolish only if product is broken or discolored.
-                    </b>
-                    """,
+            # -------- CUSTOMER DETAILS --------
+            elements.append(Paragraph(f"<b>Order ID:</b> {st.session_state.order_id}", styles["Normal"]))
+            elements.append(Paragraph(f"<b>Name:</b> {st.session_state.customer_name}", styles["Normal"]))
+            elements.append(Paragraph(f"<b>Phone:</b> {st.session_state.customer_phone}", styles["Normal"]))
+            elements.append(
+                Paragraph(
+                    f"<b>Address:</b> "
+                    f"{st.session_state.customer_city}, "
+                    f"{st.session_state.customer_state} - "
+                    f"{st.session_state.customer_pincode}<br/>"
+                    f"{st.session_state.customer_address}",
                     styles["Normal"]
-                ))
-                elements.append(Spacer(1, 20))
+                )
+            )
+            elements.append(Spacer(1, 15))
 
-                # -------- POLICY --------
-                elements.append(Paragraph("<b>Return & Delivery Policy</b>", styles["Heading2"]))
-                elements.append(Spacer(1, 10))
+            # -------- TABLE (FLIPKART STYLE) --------
+            table_data = [["Product", "Qty", "Price", "Total"]]
 
-                elements.append(Paragraph(
-                    "Return only for damaged/discolored items.<br/>"
-                    "Dispatch: 5-7 days<br/>"
-                    "Delivery: 10-12 working days<br/><br/>"
-                    "🙏 Happy Shopping<br/>✨ SAJAI TOMAY ❤️",
-                    styles["Normal"]
-                ))
-                elements.append(Spacer(1, 20))
+            for p, q, size in st.session_state.last_order:
+                price = int(p["cost"])
+                total_item = price * q
+                table_data.append([f"{p['name']} ({size})", q, f"₹{price}", f"₹{total_item}"])      
 
-                # -------- CONTACT --------
-                elements.append(Paragraph("<b>Contact & Shipping</b>", styles["Heading2"]))
-                elements.append(Spacer(1, 10))
+            table = Table(table_data)
 
-                elements.append(Paragraph(
-                    "📍 Howrah Kona, Tentultala<br/>"
-                    "📞 +91 9007893365 (3pm–9pm)<br/><br/>"
-                    "🚚 WB: ₹50 | Outside: ₹80<br/>"
-                    "🚫 COD Not Available",
-                    styles["Normal"]
-                ))
+            table.setStyle(TableStyle([
+                ("BACKGROUND", (0,0), (-1,0), colors.pink),
+                ("TEXTCOLOR", (0,0), (-1,0), colors.white),
+                ("GRID", (0,0), (-1,-1), 1, colors.black),
+                ("ALIGN", (1,1), (-1,-1), "CENTER"),
+            ]))
 
-                # -------- BUILD --------
-                doc.build(elements)
+            elements.append(table)
+            elements.append(Spacer(1, 15))
 
-                with open("invoice.pdf", "rb") as f:
-                    st.download_button("📄 Download Invoice", f, "invoice.pdf")
+            # -------- TOTAL --------
+            elements.append(Paragraph(f"<b>Total Amount: ₹{st.session_state.order_total}</b>", styles["Normal"]))
+            elements.append(Spacer(1, 20))
 
-                if st.button("🛒 Next Order"):
-                    st.session_state.order_done = False
-                    st.session_state.page = "shop"
-                    st.rerun()
+            # -------- PAYMENT MESSAGE --------
+            elements.append(Paragraph(
+                """
+                <b>👉 ✨ WELCOME TO “SAJAI TOMAY” ❤️<br/><br/>
+
+                This page will serve you your dream jewellery and stylish dresses at best quality and best price with love 💖<br/><br/>
+
+                Our team will contact you for further delivery related updates once you make the payment as per WhatsApp confirmation.<br/><br/>
+
+                ▪️ ⏳ Expect reply within 2–3 business days after dropping the message.<br/><br/>
+
+                ▪️ 📞 If no reply within 2–3 days, call: 9007893365<br/>
+                (After placing the order if you don’t get any reply or confirmation within 2–3 business days)<br/><br/>
+
+                ◾ 💖 ALL OF US FROM “SAJAI TOMAY” ARE WORKING HARD EVERYDAY TO PROVIDE YOU THE BEST PRODUCT OR SERVICE.<br/><br/>
+
+                ◾ RULES & REGULATIONS:<br/>
+                ▪️ This is a complete online boutique.<br/>
+                ▪️ We don’t have any shop or outlet.<br/>
+                ▪️ ❌ No COD available.<br/>
+                ▪️ 💳 Payments only via Google Pay, PhonePe, Paytm & Bank Transfer.<br/>
+                ▪️ 🚫 If payment is not made within 2 days, order will be cancelled automatically.<br/>
+                ▪️ 🎥 After receiving parcel, Opening Video is MUST.<br/>
+                ❌ Without opening video, no complaints will be accepted.<br/>
+                👉 Issue must be clearly visible in the video.<br/><br/>
+
+                ▪️ 🌍 We ship worldwide.<br/><br/>
+
+                ▪️ 🚚 Shipping charge all over India: ₹60/- (Except Tripura & Assam)<br/>
+                ▪️ 🚚 Tripura & Assam: ₹80/-<br/>
+                ▪️ 👗 Shipping may change for Kurti/Dresses.<br/>
+                🌍 International shipping varies by location.<br/><br/>
+
+                🎁 Purchase above ₹2000/- & get free gifts from us.<br/><br/>
+
+                ▪️ ❌ No refund facility available.<br/>
+                ✅ Replacement / Repolish only if product is broken or discolored.
+                </b>
+                """,
+                styles["Normal"]
+            ))
+            elements.append(Spacer(1, 20))
+
+            # -------- POLICY --------
+            elements.append(Paragraph("<b>Return & Delivery Policy</b>", styles["Heading2"]))
+            elements.append(Spacer(1, 10))
+
+            elements.append(Paragraph(
+                "Return only for damaged/discolored items.<br/>"
+                "Dispatch: 5-7 days<br/>"
+                "Delivery: 10-12 working days<br/><br/>"
+                "🙏 Happy Shopping<br/>✨ SAJAI TOMAY ❤️",
+                styles["Normal"]
+            ))
+            elements.append(Spacer(1, 20))
+
+            # -------- CONTACT --------
+            elements.append(Paragraph("<b>Contact & Shipping</b>", styles["Heading2"]))
+            elements.append(Spacer(1, 10))
+
+            elements.append(Paragraph(
+                "📍 Howrah Kona, Tentultala<br/>"
+                "📞 +91 9007893365 (3pm–9pm)<br/><br/>"
+                "🚚 WB: ₹50 | Outside: ₹80<br/>"
+                "🚫 COD Not Available",
+                styles["Normal"]
+            ))
+
+            # -------- BUILD --------
+            doc.build(elements)
+
+            with open("invoice.pdf", "rb") as f:
+                st.download_button("📄 Download Invoice", f, "invoice.pdf")
+
+            if st.button("🛒 Next Order"):
+
+                st.session_state.order_done = False
+
+                if "last_order" in st.session_state:
+                    del st.session_state["last_order"]
+
+                if "order_message" in st.session_state:
+                    del st.session_state["order_message"]
+                    for key in [
+                        "order_id",
+                        "customer_name",
+                        "customer_phone",
+                        "customer_address",
+                        "customer_state",
+                        "customer_city",
+                        "customer_pincode",
+                        "order_total"
+                    ]:
+                        if key in st.session_state:
+                            del st.session_state[key]
+
+                st.session_state.page = "shop"
+
+                st.rerun()
