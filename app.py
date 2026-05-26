@@ -569,6 +569,11 @@ if mode == "Admin":
                     st.markdown(
                         f"[📲 Send WhatsApp Update]({wa_link})"
                     )
+                    
+                    st.info("👇 Click WhatsApp link before refresh")
+
+                    time.sleep(5)
+                    
                     # 🔄 REFRESH
                     st.cache_data.clear()
                     st.rerun()
