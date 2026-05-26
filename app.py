@@ -968,11 +968,16 @@ else:
                         break
 
                 if not found:
+
                     st.session_state.cart.append(
                         (selected_product, qty, selected_size)
                     )
 
-                st.success("✅ Added To Bag")
+                st.toast("✅ Added To Bag")
+
+                time.sleep(0.5)
+
+                st.rerun()
     # -------- ORDER TRACKING PAGE --------
 
     if st.session_state.page == "tracking":
