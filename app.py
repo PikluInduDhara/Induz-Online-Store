@@ -962,14 +962,14 @@ else:
 
             stock = int(selected_product["stock"])
 
-            st.success(f"✅ In Stock: {stock}")
-
             if stock > 0:
+
+                st.success(f"✅ In Stock: {stock}")
 
                 qty = st.number_input(
                     "Quantity",
                     min_value=1,
-                    max_value=stock,
+                    max_value=max(1, stock),
                     value=1
                 )
 
