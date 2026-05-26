@@ -959,44 +959,52 @@ else:
 
             st.success(f"✅ In Stock: {stock}")
 
-            qty = st.number_input(
-                "Quantity",
-                min_value=1,
-                max_value=stock,
-                value=1
-            )
+            if stock > 0:
 
-            if st.button(
-                "🛒 ADD TO BAG",
-                use_container_width=True
-            ):
+                qty = st.number_input(
+                    "Quantity",
+                    min_value=1,
+                    max_value=stock,
+                    value=1
+                )
 
-                found = False
+                if st.button(
+                    "🛒 ADD TO BAG",
+                    use_container_width=True
+                ):
 
-                for i, (cp, cq, cs) in enumerate(st.session_state.cart):
+                    found = False
 
-                    if cp["name"] == selected_product["name"] and cs == selected_size:
+                    for i, (cp, cq, cs) in enumerate(st.session_state.cart):
 
-                        st.session_state.cart[i] = (
-                            cp,
-                            cq + qty,
-                            cs
+                        if cp["name"] == selected_product["name"] and cs == selected_size:
+
+                            st.session_state.cart[i] = (
+                                cp,
+                                cq + qty,
+                                cs
+                            )
+
+                            found = True
+                            break
+
+                    if not found:
+
+                        st.session_state.cart.append(
+                            (selected_product, qty, selected_size)
                         )
 
-                        found = True
-                        break
+                    st.session_state.page = "cart"
 
-                if not found:
+                    time.sleep(0.3)
 
-                    st.session_state.cart.append(
-                        (selected_product, qty, selected_size)
-                    )
+                    st.rerun()
 
-                st.session_state.page = "cart"
+            else:
 
-                time.sleep(0.3)
+                st.error("❌ Out Of Stock")
 
-                st.rerun()
+
     # -------- ORDER TRACKING PAGE --------
 
     if st.session_state.page == "tracking":
