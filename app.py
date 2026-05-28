@@ -1080,10 +1080,6 @@ else:
                         key=f"carousel_{selected_color}_{selected_size}"
                     )
 
-            image_urls = [
-                get_image_url(img)
-                for img in images
-            ]
                 
             st.markdown(f"""
             <h1 style="
