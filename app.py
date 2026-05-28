@@ -1002,30 +1002,7 @@ else:
         # LEFT SIDE IMAGE
         with col1:
 
-            image_urls = []
-
-            if image:
-
-                images = [
-                    img.strip()
-                    for img in image.split(",")
-                    if img.strip()
-                ]
-
-                image_urls = [
-                    get_image_url(img)
-                    for img in images
-                ]
-
-
-
-            if image_urls:
-
-                image_carousel(
-                    image_urls=image_urls,
-                    height=420,
-                    key="product_page_carousel"
-                )
+            st.empty()
         # RIGHT SIDE DETAILS
         with col2:
 
@@ -1082,11 +1059,26 @@ else:
             if selected_product is None:
                 st.error("Variant not available")
                 st.stop()
-            images = [
+            # ✅ DYNAMIC IMAGES BY COLOR + SIZE
+            selected_images = [
                 img.strip()
-                for img in selected_product.get("image","").split(",")
+                for img in selected_product.get("image", "").split(",")
                 if img.strip()
             ]
+
+            image_urls = [
+                get_image_url(img)
+                for img in selected_images
+            ]
+            with col1:
+
+                if image_urls:
+
+                    image_carousel(
+                        image_urls=image_urls,
+                        height=420,
+                        key=f"carousel_{selected_color}_{selected_size}"
+                    )
 
             image_urls = [
                 get_image_url(img)
