@@ -143,7 +143,14 @@ st.markdown("""
     transition:0.3s;
     cursor:pointer;
 }
+.product-card{
+    transition:0.3s;
+}
 
+.product-card:hover{
+    transform:translateY(-5px);
+    box-shadow:0 10px 25px rgba(0,0,0,0.12);
+}
 .product-image img:hover{
     transform:scale(1.04);
     box-shadow:0 8px 20px rgba(0,0,0,0.15);
@@ -326,7 +333,13 @@ if mode == "Admin":
             new_price = st.text_input("Price")
             new_stock = st.number_input("Stock", 0, 1000)
             new_category = st.text_input("Category (optional)")
-            new_sizes = st.text_input("Sizes (comma separated: S,M,L,XL)")
+            new_sizes = st.selectbox(
+                "Size",
+                ["NA","S","M","L","XL","XXL"]
+            )
+            new_color = st.text_input(
+                "Color"
+            )
 
             uploaded_files = st.file_uploader(
                 "Upload Product Images",
@@ -359,7 +372,8 @@ if mode == "Admin":
                         new_sizes,      # ✅ size column
                         new_stock,      # ✅ stock column
                         image_name,
-                        new_category
+                        new_category,
+                        new_color
                     ])
 
                     st.success("Product Added")
@@ -383,6 +397,7 @@ if mode == "Admin":
                         cols[j % 3].image(get_image_url(img), width=120)
                 col1.write(f"{p['name']} ₹{p['cost']}")
                 col1.write(f"Sizes: {p.get('size','')}")
+                col1.write(f"Color: {p.get('color','Default')}")
 
                 stock_value = int(p.get("stock", 0) or 0)
 
@@ -394,7 +409,7 @@ if mode == "Admin":
                 )
 
                 if col3.button("Update", key=f"u{i}"):
-                    products_sheet.update_cell(i, 5, new_stock)
+                    products_sheet.update_cell(i, 5, int(new_stock))
                     st.cache_data.clear()
                     st.rerun()
 
@@ -436,7 +451,22 @@ if mode == "Admin":
                 st.stop()
             total_sales = 0
 
-            headers = ["ID","Date","Customer","Phone","Address","Product","Qty","Value","Payment","Pay Ref","Del Ref","Status"]
+            headers = [
+                "ID",
+                "Date",
+                "Customer",
+                "Phone",
+                "Address",
+                "Product",
+                "Size",
+                "Color",
+                "Qty",
+                "Value",
+                "Payment",
+                "Pay Ref",
+                "Del Ref",
+                "Status"
+            ]
 
             st.markdown("""
             <style>
@@ -456,7 +486,22 @@ if mode == "Admin":
 
             st.markdown('<div class="admin-sticky">', unsafe_allow_html=True)
             
-            cols = st.columns([0.7,1,1.3,1.2,2.2,1.2,0.6,0.8,1,1,1,1.2])
+            cols = st.columns([
+                        0.7,
+                        1,
+                        1.3,
+                        1.2,
+                        2.2,
+                        1.2,
+                        0.7,
+                        0.8,
+                        0.6,
+                        0.8,
+                        1,
+                        1,
+                        1,
+                        1.2
+                    ])
 
             for col, h in zip(cols, headers):
 
@@ -487,7 +532,22 @@ if mode == "Admin":
                     except:
                         pass
                     
-                c = st.columns([0.7,1,1.3,1.2,2.2,1.2,0.6,0.8,1,1,1,1.2])
+                c = st.columns([
+                        0.7,
+                        1,
+                        1.3,
+                        1.2,
+                        2.2,
+                        1.2,
+                        0.7,
+                        0.8,
+                        0.6,
+                        0.8,
+                        1,
+                        1,
+                        1,
+                        1.2
+                    ])
 
                 c[0].write(o["id"])
                 c[1].write(o["order_date"])
@@ -497,19 +557,21 @@ if mode == "Admin":
                     f"{o['city']}, {o['state']} - {o['pincode']}\n{o['address']}"
                 )
                 c[5].write(o["product"])
-                c[6].write(o["quantity"])
-                c[7].write(str(o.get("total", 0)))
+                c[6].write(o.get("size",""))
+                c[7].write(o.get("color","Default"))
+                c[8].write(o["quantity"])
+                c[9].write(str(o.get("total", 0)))
 
-                payment = c[8].selectbox("", ["Yes","No"],
+                payment = c[10].selectbox("", ["Yes","No"],
                     index=0 if o["payment"]=="Yes" else 1, key=f"pay{i}")
 
-                pay_ref = c[9].text_input("", value=o.get("payment_ref",""), key=f"pref{i}")
-                del_ref = c[10].text_input("", value=o.get("delivery_ref",""), key=f"dref{i}")
+                pay_ref = c[11].text_input("", value=o.get("payment_ref",""), key=f"pref{i}")
+                del_ref = c[12].text_input("", value=o.get("delivery_ref",""), key=f"dref{i}")
 
                 if o["status"] == "Cancelled":
-                    status = c[11].selectbox("", ["Cancelled"], key=f"status{i}")
+                    status = c[13].selectbox("", ["Cancelled"], key=f"status{i}")
                 else:
-                    status = c[11].selectbox(
+                    status = c[13].selectbox(
                         "",
                         [
                             "Pending",
@@ -534,15 +596,19 @@ if mode == "Admin":
                     # ✅ STOCK RETURN ONLY ON FIRST CANCEL
                     if status == "Cancelled" and o["status"] != "Cancelled":
                         for j, p in enumerate(products_latest, start=2):
-                            if p["name"] == o["product"] and str(p.get("size")) == str(o.get("size")):
+                            if (
+                                p["name"] == o["product"]
+                                and str(p.get("size")) == str(o.get("size"))
+                                and str(p.get("color","Default")) == str(o.get("color","Default"))
+                            ):
                                 new_stock = int(p["stock"]) + int(o["quantity"])
-                                products_sheet.update_cell(j, 5, new_stock)
+                                products_sheet.update_cell(j, 5, int(new_stock))
 
                     # ✅ UPDATE ORDER (ONLY ONCE)
-                    orders_sheet.update_cell(i, 13, payment)
-                    orders_sheet.update_cell(i, 14, pay_ref)
-                    orders_sheet.update_cell(i, 15, del_ref)
-                    orders_sheet.update_cell(i, 12, status)
+                    orders_sheet.update_cell(i, 14, payment)
+                    orders_sheet.update_cell(i, 15, pay_ref)
+                    orders_sheet.update_cell(i, 16, del_ref)
+                    orders_sheet.update_cell(i, 13, status)
                     
                     customer_message = f"""
                     🌸 SAJAI TOMAY UPDATE 🌸
@@ -675,7 +741,10 @@ else:
     search_text = st.text_input("🔍 Search Product")
 
     # 🔥 CATEGORY BUTTONS (VISIBLE LIKE AMAZON)
-    categories = list(set([p.get("category","All") for p in products]))
+    categories = sorted(list(set([
+        p.get("category","All")
+        for p in products
+    ])))
     # -------- PREMIUM CATEGORY SECTION --------
 
     st.markdown("""
@@ -788,12 +857,28 @@ else:
     grouped = {}
 
     for p in products:
-        key = (p["name"], p["cost"], p.get("image",""), p.get("category",""))
+        key = (
+                    p["name"],
+                    p.get("category","")
+                )
 
         if key not in grouped:
-            grouped[key] = []
 
-        grouped[key].append(p)
+            grouped[key] = {
+                "items": [p],
+                "image": p.get("image",""),
+                "cost": int(p.get("cost",0))
+            }
+
+        else:
+
+            grouped[key]["items"].append(p)
+
+            grouped[key]["cost"] = min(
+                grouped[key]["cost"],
+                int(p.get("cost",0))
+            )
+
     if st.session_state.page == "shop":
         # -------- DISPLAY PRODUCTS --------
         product_list = list(grouped.items())
@@ -806,7 +891,10 @@ else:
 
                 if idx + col_num < len(product_list):
 
-                    ((name, cost, image, category), items) = product_list[idx + col_num]
+                    ((name, category), data) = product_list[idx + col_num]
+                    items = data["items"]
+                    image = data["image"]
+                    cost = data["cost"]
 
                     with cols[col_num]:
 
@@ -817,14 +905,18 @@ else:
                         if search_text and search_text.lower() not in name.lower():
                             continue
 
-                        images = [img.strip() for img in image.split(",") if img.strip()]
+                        images = [
+                            img.strip()
+                            for img in image.split(",")
+                            if img.strip()
+                        ]
 
                         card = st.container()
 
                         with card:
 
                                 st.markdown("""
-                                <div style="
+                                <div class="product-card" style="
                                     background:white;
                                     border-radius:20px;
                                     padding:16px;
@@ -838,13 +930,13 @@ else:
 
                                     st.image(
                                         get_image_url(images[0]),
-                                        width=220
+                                        width=160
                                     )
 
                                 # PRODUCT NAME
                                 st.markdown(f"""
                                 <h3 style="
-                                    font-size:22px;
+                                    font-size:18px;
                                     margin-top:10px;
                                     margin-bottom:5px;
                                     color:#222;
@@ -857,7 +949,7 @@ else:
                                 st.markdown(f"""
                                 <h2 style="
                                     color:#ff3f6c;
-                                    font-size:30px;
+                                    font-size:24px;
                                     margin-top:0;
                                 ">
                                 ₹{cost}
@@ -900,28 +992,40 @@ else:
         image = p["image"]
         items = p["items"]
 
-        images = [img.strip() for img in image.split(",") if img.strip()]
 
-        st.button("⬅ Back", on_click=lambda: st.session_state.update({"page":"shop"}))
+        if st.button("⬅ Back"):
+            st.session_state.page = "shop"
+            st.rerun()
 
         col1, col2 = st.columns([1,1])
 
         # LEFT SIDE IMAGE
         with col1:
 
-            if images:
+            image_urls = []
+
+            if image:
+
+                images = [
+                    img.strip()
+                    for img in image.split(",")
+                    if img.strip()
+                ]
 
                 image_urls = [
                     get_image_url(img)
                     for img in images
                 ]
 
+
+
+            if image_urls:
+
                 image_carousel(
                     image_urls=image_urls,
                     height=420,
                     key="product_page_carousel"
                 )
-
         # RIGHT SIDE DETAILS
         with col2:
 
@@ -934,21 +1038,32 @@ else:
             {name}
             </h1>
             """, unsafe_allow_html=True)
+            
+            color_list = list(set([
+                str(x.get("color","Default"))
+                for x in items
+                if str(x.get("color","")).strip() not in ["", "NA"]
+            ]))
+            
+            if not color_list:
+                color_list = ["Default"]
 
-            st.markdown(f"""
-            <h1 style="
-                color:#ff3f6c;
-                font-size:48px;
-                font-weight:900;
-            ">
-            ₹{cost}
-            </h1>
-            """, unsafe_allow_html=True)
+            selected_color = st.selectbox(
+                "Select Color",
+                color_list
+            )
+
 
             size_list = list(set([
                 str(x.get("size","NA"))
                 for x in items
+                if (
+                    str(x.get("size","")).strip() not in ["", "NA"]
+                    and str(x.get("color","Default")) == str(selected_color)
+                )
             ]))
+            if not size_list:
+                size_list = ["Default"]
 
             selected_size = st.selectbox(
                 "Select Size",
@@ -956,9 +1071,37 @@ else:
             )
 
             selected_product = next(
-                x for x in items
-                if str(x.get("size")) == str(selected_size)
+                (
+                    x for x in items
+                    if str(x.get("size")) == str(selected_size)
+                    and str(x.get("color","Default")) == str(selected_color)
+                ),
+                None
             )
+
+            if selected_product is None:
+                st.error("Variant not available")
+                st.stop()
+            images = [
+                img.strip()
+                for img in selected_product.get("image","").split(",")
+                if img.strip()
+            ]
+
+            image_urls = [
+                get_image_url(img)
+                for img in images
+            ]
+                
+            st.markdown(f"""
+            <h1 style="
+                color:#ff3f6c;
+                font-size:48px;
+                font-weight:900;
+            ">
+            ₹{selected_product['cost']}
+            </h1>
+            """, unsafe_allow_html=True)
 
             stock = int(selected_product["stock"])
 
@@ -982,7 +1125,11 @@ else:
 
                     for i, (cp, cq, cs) in enumerate(st.session_state.cart):
 
-                        if cp["name"] == selected_product["name"] and cs == selected_size:
+                        if (
+                            cp["name"] == selected_product["name"]
+                            and cs == selected_size
+                            and cp.get("selected_color") == selected_color
+                        ):
 
                             st.session_state.cart[i] = (
                                 cp,
@@ -995,10 +1142,13 @@ else:
 
                     if not found:
 
-                        st.session_state.cart.append(
-                            (selected_product, qty, selected_size)
-                        )
+                        cart_product = selected_product.copy()
 
+                        cart_product["selected_color"] = selected_color
+
+                        st.session_state.cart.append(
+                            (cart_product, qty, selected_size)
+                        )
                     st.session_state.page = "cart"
 
                     time.sleep(0.3)
@@ -1070,6 +1220,8 @@ else:
                     <p><b>🛍️ Product:</b> {o['product']}</p>
 
                     <p><b>📏 Size:</b> {o['size']}</p>
+                    
+                    <p><b>🎨 Color:</b> {o.get('color','Default')}</p>
 
                     <p><b>🔢 Quantity:</b> {o['quantity']}</p>
 
@@ -1161,6 +1313,7 @@ else:
 
                 st.markdown(f"### {p['name']}")
                 st.write(f"Size: {size}")
+                st.write(f"Color: {p.get('selected_color','Default')}")
                 st.write(f"Qty: {q}")
                 st.write(f"Price: ₹{p['cost']}")
                 st.write(f"Total: ₹{item_total}")
@@ -1263,7 +1416,13 @@ else:
                         st.error("⚠️ Server busy. Please try again.")
                         st.stop()
 
-                    order_id = len(orders) + 1
+                    existing_ids = [
+                        int(o["id"])
+                        for o in orders
+                        if str(o.get("id","")).isdigit()
+                    ]
+
+                    order_id = max(existing_ids, default=0) + 1
 
                     products_latest = load_products()
                     
@@ -1281,6 +1440,7 @@ else:
                             addr,
                             p['name'],
                             size,
+                            p.get("selected_color","Default"),
                             q,
                             item_total,
                             "Pending",
@@ -1292,9 +1452,13 @@ else:
 
 
                         for k, prod in enumerate(products_latest, start=2):
-                            if prod["name"] == p["name"] and str(prod.get("size")) == str(size):
+                            if (
+                                prod["name"] == p["name"]
+                                and str(prod.get("size")) == str(size)
+                                and str(prod.get("color","Default")) == str(p.get("selected_color","Default"))
+                            ):
                                 new_stock = max(0, int(prod["stock"]) - q)
-                                products_sheet.update_cell(k, 5, new_stock)
+                                products_sheet.update_cell(k, 5, int(new_stock))
 
                     st.cache_data.clear()
 
@@ -1518,7 +1682,7 @@ else:
             for p, q, size in st.session_state.last_order:
                 price = int(p["cost"])
                 total_item = price * q
-                table_data.append([f"{p['name']} ({size})", q, f"₹{price}", f"₹{total_item}"])      
+                table_data.append([f"{p['name']} ({size}, {p.get('selected_color','Default')})", q, f"₹{price}", f"₹{total_item}"])      
 
             table = Table(table_data)
 
