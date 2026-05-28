@@ -1047,18 +1047,27 @@ else:
                 size_list
             )
 
-            selected_product = next(
-                (
-                    x for x in items
-                    if str(x.get("size")) == str(selected_size)
-                    and str(x.get("color","Default")) == str(selected_color)
-                ),
-                None
-            )
+            # ✅ NORMAL PRODUCTS (NO SIZE / COLOR)
+            if selected_size == "Default":
 
+                selected_product = items[0]
+
+            # ✅ VARIANT PRODUCTS
+            else:
+
+                selected_product = next(
+                    (
+                        x for x in items
+                        if str(x.get("size")) == str(selected_size)
+                        and str(x.get("color","Default")) == str(selected_color)
+                    ),
+                    None
+                )
+
+            # ✅ SAFETY CHECK
             if selected_product is None:
-                st.error("Variant not available")
-                st.stop()
+
+                selected_product = items[0]
             # ✅ DYNAMIC IMAGES BY COLOR + SIZE
             selected_images = [
                 img.strip()
