@@ -204,7 +204,7 @@ if mode == "Admin":
 
     password = st.sidebar.text_input("Password", type="password")
 
-    if password == "Indu@1234#":
+    if password == st.secrets["admin_password"]:
 
         st.header("Admin Panel")
         admin_page = st.sidebar.radio(
