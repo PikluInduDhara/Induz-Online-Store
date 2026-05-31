@@ -1,4 +1,9 @@
 import streamlit as st
+st.set_page_config(
+    page_title="Sajai Tomay",
+    page_icon="🌸",
+    layout="wide"
+)
 from streamlit_image_carousel import image_carousel
 import os
 import urllib.parse
@@ -181,6 +186,11 @@ with nav3:
         🌸 Sajai Tomay 🌸
         </h1>
     """, unsafe_allow_html=True)
+    st.markdown("""
+        <div style='text-align:center; margin-top:-10px;'>
+        Online Shopping Store for Sarees, Jewellery, Fashion Shirts and Gifts.
+        </div>
+        """, unsafe_allow_html=True)
 
 with nav4:
 
