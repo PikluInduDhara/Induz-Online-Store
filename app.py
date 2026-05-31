@@ -204,7 +204,12 @@ if mode == "Admin":
 
     password = st.sidebar.text_input("Password", type="password")
 
-    if password == st.secrets["admin_password"]:
+    ADMIN_PASSWORD = (
+        st.secrets["gcp_service_account"]
+        .get("admin_password", "Indu@1234#")
+    )
+
+    if password == ADMIN_PASSWORD:
 
         st.header("Admin Panel")
         admin_page = st.sidebar.radio(
