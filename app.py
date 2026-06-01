@@ -1278,23 +1278,24 @@ else:
                             1,
                             5,
                             5,
-                            key=f"rate_{o['id']}"
+                            key=f"rate_{o['id']}_{o['product']}"
                         )
 
                         review = st.text_area(
                             "Write Review",
-                            key=f"review_{o['id']}"
+                            key=f"review_{o['id']}_{o['product']}"
                         )
 
                         if st.button(
                             "Submit Review",
-                            key=f"submit_review_{o['id']}"
+                            key=f"submit_review_{o['id']}_{o['product']}"
                         ):
 
                             existing_reviews = reviews_sheet.get_all_records()
 
                             already_reviewed = any(
                                 str(r["order_id"]) == str(o["id"])
+                                and str(r["product"]) == str(o["product"])
                                 for r in existing_reviews
                             )
 
