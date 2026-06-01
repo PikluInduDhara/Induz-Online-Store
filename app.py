@@ -624,9 +624,15 @@ if mode == "Admin":
                     # ✅ STOCK RETURN ONLY ON FIRST CANCEL
                     if status == "Cancelled" and o["status"] != "Cancelled":
                         for j, p in enumerate(products_latest, start=2):
+                            product_size = str(p.get("size","NA"))
+                            order_size = str(o.get("size","NA"))
+
+                            if order_size == "Default":
+                                order_size = "NA"
+
                             if (
                                 p["name"] == o["product"]
-                                and str(p.get("size")) == str(o.get("size"))
+                                and product_size == order_size
                                 and str(p.get("color","Default")) == str(o.get("color","Default"))
                             ):
                                 new_stock = int(p["stock"]) + int(o["quantity"])
@@ -1492,7 +1498,10 @@ else:
                     for p, q, size in st.session_state.cart:
 
                         item_total = int(p["cost"]) * q
+                        save_size = size
 
+                        if save_size == "Default":
+                            save_size = "NA"
                         orders_sheet.append_row([
                             order_id,
                             name,
@@ -1502,7 +1511,7 @@ else:
                             city,
                             addr,
                             p['name'],
-                            size,
+                            save_size,
                             p.get("selected_color","Default"),
                             q,
                             item_total,
@@ -1515,9 +1524,17 @@ else:
 
 
                         for k, prod in enumerate(products_latest, start=2):
+
+                            product_size = str(prod.get("size", "NA"))
+
+                            order_size = str(size)
+
+                            if order_size == "Default":
+                                order_size = "NA"
+
                             if (
                                 prod["name"] == p["name"]
-                                and str(prod.get("size")) == str(size)
+                                and product_size == order_size
                                 and str(prod.get("color","Default")) == str(p.get("selected_color","Default"))
                             ):
                                 new_stock = max(0, int(prod["stock"]) - q)
