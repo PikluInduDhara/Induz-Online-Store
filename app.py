@@ -1187,8 +1187,15 @@ else:
 
     # -------- ORDER TRACKING PAGE --------
 
-    if st.session_state.page == "tracking":
+    col1, col2 = st.columns([1,5])
 
+    with col1:
+        if st.button("⬅ Back"):
+            st.session_state.page = "shop"
+            st.session_state.track_phone = ""
+            st.rerun()
+
+    with col2:
         st.title("📦 Track Your Order")
 
         phone_search = st.text_input(
@@ -1203,7 +1210,6 @@ else:
 
             st.session_state.track_phone = phone_search
             
-            st.rerun()
 
         if st.session_state.track_phone:
 
@@ -1451,7 +1457,7 @@ else:
                 if not name or not phone or not addr:
                     st.error("Fill all details")
 
-                elif len(phone) != 10:
+                elif not phone.isdigit() or len(phone) != 10:
                     st.error("Invalid phone")
 
                 else:
