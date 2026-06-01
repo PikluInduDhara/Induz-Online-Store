@@ -1021,7 +1021,7 @@ else:
         items = p["items"]
 
 
-        if st.button("⬅ Back"):
+        if st.button("⬅ Back", key="product_back"):
             st.session_state.page = "shop"
             st.rerun()
 
@@ -1186,29 +1186,34 @@ else:
 
 
     # -------- ORDER TRACKING PAGE --------
+    if st.session_state.page == "tracking":
 
-    col1, col2 = st.columns([1,5])
+        col1, col2 = st.columns([1,5])
 
-    with col1:
-        if st.button("⬅ Back"):
-            st.session_state.page = "shop"
-            st.session_state.track_phone = ""
-            st.rerun()
+        with col1:
+            if st.button("⬅ Back", key="track_back"):
+                st.session_state.page = "shop"
+                st.session_state.track_phone = ""
+                st.rerun()
 
-    with col2:
-        st.title("📦 Track Your Order")
+        with col2:
+            st.title("📦 Track Your Order")
 
-        phone_search = st.text_input(
-            "Enter Your Phone Number",
-            value=st.session_state.track_phone
-        )
-        order_search = st.text_input(
-            "Enter Order ID"
-        )
+            phone_search = st.text_input(
+                "Enter Your Phone Number",
+                value=st.session_state.track_phone
+            )
 
-        if st.button("🔍 Track Order"):
+            order_search = st.text_input(
+                "Enter Order ID"
+            )
 
-            st.session_state.track_phone = phone_search
+            if st.button(
+                "🔍 Track Order",
+                key="track_order_btn"
+            ):
+                st.session_state.track_phone = phone_search
+                st.session_state.order_done = True
             
 
         if st.session_state.track_phone:
@@ -1330,14 +1335,20 @@ else:
 
             st.info("🛒 Your cart is empty")
 
-            if st.button("⬅ Go Shopping"):
+            if st.button(
+                "⬅ Go Shopping",
+                key="go_shop"
+            ):
                 st.session_state.page = "shop"
                 st.rerun()
 
             st.stop()
         # -------- CART --------
         st.subheader("Cart")
-        if st.button("⬅ Continue Shopping"):
+        if st.button(
+            "⬅ Continue Shopping",
+            key="continue_shop"
+        ):
             st.session_state.page = "shop"
             st.rerun()
 
