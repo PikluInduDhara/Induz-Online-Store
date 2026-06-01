@@ -2,7 +2,8 @@ import streamlit as st
 st.set_page_config(
     page_title="Sajai Tomay",
     page_icon="🌸",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 from streamlit_image_carousel import image_carousel
 import os
@@ -13,11 +14,6 @@ import base64
 import requests
 import pgeocode
 import gspread
-st.set_page_config(
-    page_title="Sajai Tomay",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
 
 st.markdown("""
 <link rel="manifest" href="/.streamlit/manifest.json">
@@ -29,12 +25,19 @@ from reportlab.lib import colors
 from oauth2client.service_account import ServiceAccountCredentials
 from reportlab.lib.styles import getSampleStyleSheet
 def get_image_url(img):
+
+    img = str(img).strip()
+
     if "drive.google.com" in img:
+
         try:
             file_id = img.split("/d/")[1].split("/")[0]
-            return f"https://lh3.googleusercontent.com/d/{file_id}"
+
+            return f"https://drive.google.com/uc?export=view&id={file_id}"
+
         except:
             return img
+
     return f"images/{img}"
 
 # ---------------- GOOGLE SHEET ----------------
@@ -52,6 +55,7 @@ try:
     sheet = client.open("SajaiTomayDB")
     products_sheet = sheet.worksheet("products")
     orders_sheet = sheet.worksheet("orders")
+    reviews_sheet = sheet.worksheet("Reviews")
     @st.cache_data(ttl=60)
     def load_products():
         return products_sheet.get_all_records()
@@ -340,7 +344,16 @@ if mode == "Admin":
 
             st.dataframe(dashboard_df, use_container_width=True)
             st.bar_chart(dashboard_df["Sales"])
-        if admin_page == "📦 Products":
+            st.markdown("---")
+            st.subheader("⭐ Customer Reviews")
+
+            reviews = reviews_sheet.get_all_records()
+
+            if reviews:
+                st.dataframe(pd.DataFrame(reviews))
+            else:
+                st.info("No reviews yet")
+        elif admin_page == "📦 Products":
             # -------- ADD PRODUCT --------
             st.subheader("➕ Add Product")
 
@@ -436,7 +449,7 @@ if mode == "Admin":
             if st.button("🔄 Refresh"):
                 st.cache_data.clear()
                 st.rerun()
-        if admin_page == "🚚 Orders":
+        elif admin_page == "🚚 Orders":
             # -------- DELIVERY DASHBOARD --------
             st.subheader("Delivery Dashboard")
             st.markdown("""
@@ -1278,7 +1291,27 @@ else:
                             key=f"submit_review_{o['id']}"
                         ):
 
-                            st.success("❤️ Thank you for your review!")
+                            existing_reviews = reviews_sheet.get_all_records()
+
+                            already_reviewed = any(
+                                str(r["order_id"]) == str(o["id"])
+                                for r in existing_reviews
+                            )
+
+                            if already_reviewed:
+                                st.warning("Review already submitted")
+                            else:
+                                reviews_sheet.append_row([
+                                    o["id"],
+                                    o["customer"],
+                                    o["product"],
+                                    rating,
+                                    review,
+                                    time.strftime("%Y-%m-%d")
+                                ])
+
+                                st.success("❤️ Review Submitted")
+
 
             else:
 
