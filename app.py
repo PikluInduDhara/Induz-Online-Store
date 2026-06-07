@@ -32,13 +32,29 @@ def get_image_url(img):
 
         try:
             file_id = img.split("/d/")[1].split("/")[0]
-
             return f"https://lh3.googleusercontent.com/d/{file_id}"
 
         except:
             return img
 
     return img
+
+
+def get_video_url(video):
+
+    video = str(video).strip()
+
+    if "drive.google.com" in video:
+
+        try:
+            file_id = video.split("/d/")[1].split("/")[0]
+
+            return f"https://drive.google.com/uc?export=download&id={file_id}"
+
+        except:
+            return video
+
+    return video
 
 # ---------------- GOOGLE SHEET ----------------
 scope = [
@@ -368,6 +384,9 @@ if mode == "Admin":
             new_color = st.text_input(
                 "Color"
             )
+            video_url = st.text_input(
+                "Product Video URL"
+            )
 
             uploaded_files = st.file_uploader(
                 "Upload Product Images",
@@ -401,7 +420,8 @@ if mode == "Admin":
                         new_stock,      # ✅ stock column
                         image_name,
                         new_category,
-                        new_color
+                        new_color,
+                        video_url
                     ])
 
                     st.success("Product Added")
@@ -1108,6 +1128,7 @@ else:
                 for img in selected_product.get("image", "").split(",")
                 if img.strip()
             ]
+            video_url = selected_product.get("video","")
 
             image_urls = [
                 get_image_url(img)
@@ -1122,6 +1143,11 @@ else:
                         height=420,
                         key=f"carousel_{selected_color}_{selected_size}"
                     )
+                if video_url:
+
+                    st.markdown("### 🎥 Product Video")
+
+                    st.video(get_video_url(video_url))   
 
                 
             st.markdown(f"""
