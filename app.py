@@ -358,8 +358,23 @@ if mode == "Admin":
 
             dashboard_df = pd.DataFrame(category_summary).T
 
-            st.dataframe(dashboard_df, use_container_width=True)
-            st.bar_chart(dashboard_df["Sales"])
+            if not dashboard_df.empty:
+
+                st.dataframe(
+                    dashboard_df,
+                    use_container_width=True
+                )
+
+                if "Sales" in dashboard_df.columns:
+                    st.bar_chart(
+                        dashboard_df["Sales"]
+                    )
+
+            else:
+
+                st.info(
+                    "No orders available yet"
+                )
             st.markdown("---")
             st.subheader("⭐ Customer Reviews")
 
