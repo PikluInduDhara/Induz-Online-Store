@@ -49,7 +49,7 @@ def get_video_url(video):
         try:
             file_id = video.split("/d/")[1].split("/")[0]
 
-            return f"https://drive.google.com/file/d/{file_id}/preview"
+            return f"https://drive.google.com/uc?export=download&id={file_id}"
 
         except:
             return video
@@ -1164,11 +1164,21 @@ else:
 
                     video_link = get_video_url(video_url)
 
-                    st.components.v1.iframe(
-                        video_link,
-                        height=400,
-                        scrolling=False
-                    )  
+                    st.markdown(f"""
+                    <video
+                        width="100%"
+                        height="450"
+                        controls
+                        playsinline
+                        preload="metadata"
+                        style="
+                            border-radius:15px;
+                            background:black;
+                        "
+                    >
+                        <source src="{video_link}" type="video/mp4">
+                    </video>
+                    """, unsafe_allow_html=True)
 
                 
             st.markdown(f"""
