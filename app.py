@@ -1164,21 +1164,8 @@ else:
 
                     video_link = get_video_url(video_url)
 
-                    st.markdown(f"""
-                    <video
-                        width="100%"
-                        height="450"
-                        controls
-                        playsinline
-                        preload="metadata"
-                        style="
-                            border-radius:15px;
-                            background:black;
-                        "
-                    >
-                        <source src="{video_link}" type="video/mp4">
-                    </video>
-                    """, unsafe_allow_html=True)
+                    st.video(video_link)
+
 
                 
             st.markdown(f"""
