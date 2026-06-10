@@ -1158,17 +1158,25 @@ else:
                         height=420,
                         key=f"carousel_{selected_color}_{selected_size}"
                     )
-                if video_url:
+                    if video_url:
 
-                    st.markdown("### 🎥 Product Video")
+                        st.markdown("### 🎥 Product Video")
 
-                    video_link = get_video_url(video_url)
+                        video_link = get_video_url(video_url)
 
-                    st.components.v1.iframe(
-                        video_link,
-                        height=400,
-                        scrolling=False
-                    )  
+                        st.components.v1.html(
+                            f"""
+                            <video
+                                width="100%"
+                                controls
+                                preload="metadata"
+                                playsinline
+                            >
+                                <source src="{video_link}">
+                            </video>
+                            """,
+                            height=450
+                        )
 
                 
             st.markdown(f"""
