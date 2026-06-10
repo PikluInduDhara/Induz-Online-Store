@@ -1164,20 +1164,11 @@ else:
 
                     video_link = get_video_url(video_url)
 
-                    st.components.v1.html(
-                        f"""
-                        <video
-                            width="100%"
-                            controls
-                            preload="metadata"
-                            playsinline
-                        >
-                            <source src="{video_link}">
-                        </video>
-                        """,
-                        height=450
+                    st.components.v1.iframe(
+                        video_link,
+                        height=400,
+                        scrolling=False
                     )
-
                 
             st.markdown(f"""
             <h1 style="
