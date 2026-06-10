@@ -1163,8 +1163,6 @@ else:
                     st.markdown("### 🎥 Product Video")
 
                     video_link = get_video_url(video_url)
-                    
-                    st.video(video_link)
 
                     st.components.v1.iframe(
                         video_link,
