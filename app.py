@@ -49,7 +49,7 @@ def get_video_url(video):
         try:
             file_id = video.split("/d/")[1].split("/")[0]
 
-            return f"https://drive.google.com/uc?export=download&id={file_id}"
+            return f"https://drive.google.com/uc?id={file_id}"
 
         except:
             return video
