@@ -49,7 +49,7 @@ def get_video_url(video):
         try:
             file_id = video.split("/d/")[1].split("/")[0]
 
-            return f"https://drive.google.com/file/d/{file_id}/preview"
+            return f"https://drive.google.com/uc?export=download&id={file_id}"
 
         except:
             return video
@@ -1158,25 +1158,25 @@ else:
                         height=420,
                         key=f"carousel_{selected_color}_{selected_size}"
                     )
-                    if video_url:
+                if video_url:
 
-                        st.markdown("### 🎥 Product Video")
+                    st.markdown("### 🎥 Product Video")
 
-                        video_link = get_video_url(video_url)
+                    video_link = get_video_url(video_url)
 
-                        st.components.v1.html(
-                            f"""
-                            <video
-                                width="100%"
-                                controls
-                                preload="metadata"
-                                playsinline
-                            >
-                                <source src="{video_link}">
-                            </video>
-                            """,
-                            height=450
-                        )
+                    st.components.v1.html(
+                        f"""
+                        <video
+                            width="100%"
+                            controls
+                            preload="metadata"
+                            playsinline
+                        >
+                            <source src="{video_link}">
+                        </video>
+                        """,
+                        height=450
+                    )
 
                 
             st.markdown(f"""
