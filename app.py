@@ -49,7 +49,7 @@ def get_video_url(video):
         try:
             file_id = video.split("/d/")[1].split("/")[0]
 
-            return f"https://drive.google.com/uc?export=download&id={file_id}"
+            return f"https://drive.google.com/file/d/{file_id}/preview"
 
         except:
             return video
@@ -1168,7 +1168,8 @@ else:
                         video_link,
                         height=400,
                         scrolling=False
-                    )
+                    )  
+
                 
             st.markdown(f"""
             <h1 style="
