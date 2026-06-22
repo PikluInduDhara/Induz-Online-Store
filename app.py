@@ -743,7 +743,7 @@ else:
     st.markdown("""
     <div style="
     background:linear-gradient(135deg,#fff0f6,#ffe6ef);
-    padding:25px;
+    padding:10px;
     border-radius:20px;
     text-align:center;
     margin-bottom:25px;
@@ -754,24 +754,17 @@ else:
     🌸 SAJAI TOMAY OUTLET 🌸
     </h1>
 
-    <p style="font-size:18px;">
+    <p style="font-size:15px;">
 
-    Jewellery • Saree • Fashion Boutique
+    📍 Kona Tentultala Before Peyara Bagan Near Sagar Toto Garrage, Howrah - 711114
 
-    <br><br>
+    <br>
 
-    📍 Kona Tentultala
+    🕒 11 PM – 9.30 PM
 
-    Howrah - 711114
-
-    <br><br>
-
-    🕒 3 PM to 9 PM
-
-    <br><br>
+    <br>
 
     📞 9007893365
-
     </p>
 
     </div>
@@ -1141,7 +1134,26 @@ else:
 
         st.markdown('<div class="bigback">', unsafe_allow_html=True)
 
-        if st.button("⬅ BACK TO SHOP", key="product_back"):
+        st.markdown("""
+        <style>
+
+        div.stButton > button:first-child {
+            background:#ff3f6c !important;
+            color:white !important;
+            font-size:22px !important;
+            font-weight:bold !important;
+            height:60px !important;
+            border-radius:15px !important;
+        }
+
+        </style>
+        """, unsafe_allow_html=True)
+        
+        if st.button(
+            "⬅ BACK TO SHOP",
+            key="product_back",
+            use_container_width=True
+        ):
             st.session_state.page = "shop"
             st.rerun()
 
