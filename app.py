@@ -743,18 +743,18 @@ else:
     st.markdown("""
     <div style="
     background:linear-gradient(135deg,#fff0f6,#ffe6ef);
-    padding:10px;
+    padding:5px;
     border-radius:20px;
     text-align:center;
     margin-bottom:25px;
     border:2px solid #ffd6e7;
     ">
 
-    <h1 style="color:#d63384;">
+    <h2 style="color:#d63384;margin-bottom:5px;">
     🌸 SAJAI TOMAY OUTLET 🌸
-    </h1>
+    </h2>
 
-    <p style="font-size:15px;">
+    <p style="font-size:14px;line-height:1.4;">
 
     📍 Kona Tentultala Before Peyara Bagan Near Sagar Toto Garrage, Howrah - 711114
 
@@ -769,10 +769,63 @@ else:
 
     </div>
     """, unsafe_allow_html=True)
-    st.link_button(
-        "📍 OPEN GOOGLE MAP",
-        "https://maps.app.goo.gl/v7CaAHtskZJSi6F57"
-    )
+    st.markdown("""
+    <div style='text-align:center;margin-top:10px;margin-bottom:20px;'>
+
+    <a href="https://maps.app.goo.gl/v7CaAHtskZJSi6F57" target="_blank"
+    style="
+    background:#ff4d94;
+    color:white;
+    padding:10px 18px;
+    border-radius:10px;
+    text-decoration:none;
+    font-weight:bold;
+    margin:5px;
+    display:inline-block;">
+    📍 Visit Outlet
+    </a>
+
+    <a href="https://www.facebook.com/share/1BdcYLD7WN/" target="_blank"
+    style="
+    background:#1877F2;
+    color:white;
+    padding:10px 18px;
+    border-radius:10px;
+    text-decoration:none;
+    font-weight:bold;
+    margin:5px;
+    display:inline-block;">
+    📘 Facebook
+    </a>
+
+    <a href="https://www.instagram.com/sajai_tomay?igsh=dTh5YW5ybmhpYzNl" target="_blank"
+    style="
+    background:#E1306C;
+    color:white;
+    padding:10px 18px;
+    border-radius:10px;
+    text-decoration:none;
+    font-weight:bold;
+    margin:5px;
+    display:inline-block;">
+    📸 Instagram
+    </a>
+
+    <a href="https://youtube.com/@sajaitomay?si=sfkLAD0TR32ebOZN" target="_blank"
+    style="
+    background:#FF0000;
+    color:white;
+    padding:10px 18px;
+    border-radius:10px;
+    text-decoration:none;
+    font-weight:bold;
+    margin:5px;
+    display:inline-block;">
+    ▶️ YouTube
+    </a>
+
+    </div>
+    """, unsafe_allow_html=True)
     # -------- DYNAMIC HERO SLIDER --------
 
     try:
