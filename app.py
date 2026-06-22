@@ -200,7 +200,7 @@ with nav3:
         <h1 style='
             color:#d63384;
             margin-top:20px;
-            font-size:48px;
+            font-size:40px;
             font-weight:bold;
         '>
         🌸 Sajai Tomay 🌸
@@ -723,6 +723,63 @@ if mode == "Admin":
 else:
 
     st.subheader("Products")
+    st.info("""
+    🛍️ HOW TO ORDER
+
+    1️⃣ Select Category
+
+    2️⃣ Click View Details
+
+    3️⃣ Select Color / Size
+
+    4️⃣ Click Add To Bag
+
+    5️⃣ Fill Address & Place Order
+
+    6️⃣ Send WhatsApp Order To Admin
+
+    7️⃣ Track Order Anytime
+    """)
+    st.markdown("""
+    <div style="
+    background:linear-gradient(135deg,#fff0f6,#ffe6ef);
+    padding:25px;
+    border-radius:20px;
+    text-align:center;
+    margin-bottom:25px;
+    border:2px solid #ffd6e7;
+    ">
+
+    <h1 style="color:#d63384;">
+    🌸 SAJAI TOMAY OUTLET 🌸
+    </h1>
+
+    <p style="font-size:18px;">
+
+    Jewellery • Saree • Fashion Boutique
+
+    <br><br>
+
+    📍 Kona Tentultala
+
+    Howrah - 711114
+
+    <br><br>
+
+    🕒 3 PM to 9 PM
+
+    <br><br>
+
+    📞 9007893365
+
+    </p>
+
+    </div>
+    """, unsafe_allow_html=True)
+    st.link_button(
+        "📍 OPEN GOOGLE MAP",
+        "https://maps.app.goo.gl/v7CaAHtskZJSi6F57"
+    )
     # -------- DYNAMIC HERO SLIDER --------
 
     try:
@@ -1049,6 +1106,9 @@ else:
     # -------- PRODUCT DETAILS PAGE --------
 
     if st.session_state.page == "product":
+        st.success(
+        "📍 Home > Category > Product Details"
+        )
 
         p = st.session_state.selected_product
 
@@ -1062,9 +1122,30 @@ else:
         items = p["items"]
 
 
-        if st.button("⬅ Back", key="product_back"):
+        st.markdown("""
+        <style>
+        div[data-testid="stButton"] button[kind="secondary"]{
+            border-radius:12px;
+        }
+
+        .bigback button{
+            background:#ff3f6c !important;
+            color:white !important;
+            font-size:20px !important;
+            font-weight:bold !important;
+            height:55px !important;
+            border:none !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+
+        st.markdown('<div class="bigback">', unsafe_allow_html=True)
+
+        if st.button("⬅ BACK TO SHOP", key="product_back"):
             st.session_state.page = "shop"
             st.rerun()
+
+        st.markdown('</div>', unsafe_allow_html=True)
 
         col1, col2 = st.columns([1,1])
 
