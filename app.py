@@ -81,13 +81,16 @@ try:
     def load_orders():
         return orders_sheet.get_all_records()
 
+
     @st.cache_data(ttl=60)
     def load_banners():
-        @st.cache_data(ttl=60)
-        def load_categories():
-            return category_sheet.get_all_records()
         banner_sheet = sheet.worksheet("Banners")
         return banner_sheet.get_all_records()
+
+
+    @st.cache_data(ttl=60)
+    def load_categories():
+        return category_sheet.get_all_records()
 except Exception as e:
     st.error("⚠️ Google Sheet connection issue. Please refresh.")
     st.stop()
@@ -979,37 +982,37 @@ else:
     )
 
     # CATEGORY ICONS
-all_categories = [{"Category":"All","Image":""}] + category_data
+    all_categories = [{"Category":"All","Image":""}] + category_data
 
-cat_cols = st.columns(6)
+    cat_cols = st.columns(6)
 
-for i, cat in enumerate(all_categories):
+    for i, cat in enumerate(all_categories):
 
-    with cat_cols[i % 6]:
+        with cat_cols[i % 6]:
 
-        if cat["Category"]=="All":
+            if cat["Category"]=="All":
 
-            st.image(
-                "https://cdn-icons-png.flaticon.com/512/3144/3144456.png",
+                st.image(
+                    "https://cdn-icons-png.flaticon.com/512/3144/3144456.png",
+                    use_container_width=True
+                )
+
+            else:
+
+                st.image(
+                    get_image_url(cat["Image"]),
+                    use_container_width=True
+                )
+
+            if st.button(
+                cat["Category"],
+                key=f"cat_{cat['Category']}",
                 use_container_width=True
-            )
+            ):
 
-        else:
-
-            st.image(
-                get_image_url(cat["Image"]),
-                use_container_width=True
-            )
-
-        if st.button(
-            cat["Category"],
-            key=f"cat_{cat['Category']}",
-            use_container_width=True
-        ):
-
-            st.session_state.selected_category=cat["Category"]
-            
-    selected_category = st.session_state.selected_category
+                st.session_state.selected_category=cat["Category"]
+                
+        selected_category = st.session_state.selected_category
 
     if "cart" not in st.session_state:
         st.session_state.cart = []
