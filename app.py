@@ -994,42 +994,68 @@ else:
     )
 
     # CATEGORY ICONS
-    all_categories = [{"Category":"All","Image":""}] + category_data
+    st.markdown("""
+    <style>
 
-    is_mobile = st.query_params.get("mobile", "0") == "1"
+    .category-box{
+        text-align:center;
+        margin-bottom:10px;
+    }
 
-    if is_mobile:
-        cat_cols = st.columns(5)
-    else:
-        cat_cols = st.columns(8)
+    .category-box img{
+        width:75px;
+        height:75px;
+        object-fit:cover;
+        border-radius:14px;
+        border:2px solid #f3d6e2;
+        transition:0.25s;
+    }
 
-    for i, cat in enumerate(all_categories):
+    .category-box img:hover{
+        transform:scale(1.08);
+        border:2px solid #ff4d94;
+    }
 
-        with cat_cols[i % 6]:
+    @media (max-width:768px){
 
-            if cat["Category"]=="All":
+    .category-box img{
+        width:60px;
+        height:60px;
+    }
 
-                st.image(
-                    "https://cdn-icons-png.flaticon.com/512/3144/3144456.png",
-                    width=70
-                )
-                
+    }
 
-            else:
+    </style>
+    """, unsafe_allow_html=True)   
+    all_categories=[{"Category":"All","Image":""}] + category_data
 
-                st.image(
-                    get_image_url(cat["Image"]),
-                    width=70
-                )
+cols=st.columns(4)
 
-            if st.button(
-                cat["Category"],
-                key=f"cat_{cat['Category']}",
-                use_container_width=True
-            ):
+for i,cat in enumerate(all_categories):
 
-                st.session_state.selected_category=cat["Category"]
-                
+    with cols[i%4]:
+
+        if cat["Category"]=="All":
+            img="https://cdn-icons-png.flaticon.com/512/3144/3144456.png"
+        else:
+            img=get_image_url(cat["Image"])
+
+        st.markdown(
+            f"""
+            <div class="category-box">
+            <img src="{img}">
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        if st.button(
+            cat["Category"],
+            key=f"cat_{i}",
+            use_container_width=True
+        ):
+            st.session_state.selected_category=cat["Category"]
+            st.rerun()             
     # ---------------- Session State ----------------
 
     if "cart" not in st.session_state:
