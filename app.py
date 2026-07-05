@@ -992,43 +992,98 @@ else:
         '<div class="category-title">🛍️ Shop By Category</div>',
         unsafe_allow_html=True
     )
+    st.markdown(
+        """
+        <div style="margin-top:-10px;"></div>
+        """,
+        unsafe_allow_html=True
+        )
 
-    # CATEGORY ICONS
-    all_categories = [{"Category":"All","Image":""}] + category_data
+        # =======================
+    # MYNTRA STYLE CATEGORY
+    # =======================
 
-    is_mobile = st.query_params.get("mobile", "0") == "1"
+    st.markdown("""
+    <style>
 
-    if is_mobile:
-        cat_cols = st.columns(5)
-    else:
-        cat_cols = st.columns(8)
+    .category-box{
+        text-align:center;
+        margin-bottom:18px;
+    }
 
-    for i, cat in enumerate(all_categories):
+    .category-box img{
 
-        with cat_cols[i % 6]:
+        width:100px;
+        height:100px;
+
+        object-fit:cover;
+
+        border-radius:18px;
+
+        border:1px solid #f0f0f0;
+
+        transition:.25s;
+    }
+
+    .category-box img:hover{
+
+        transform:scale(1.05);
+
+        box-shadow:0 8px 18px rgba(0,0,0,.12);
+
+    }
+
+    @media(max-width:768px){
+
+    .category-box img{
+
+        width:70px;
+
+        height:70px;
+
+    }
+
+    }
+
+    </style>
+    """, unsafe_allow_html=True)
+
+    all_categories=[{"Category":"All","Image":""}] + category_data
+
+    cols = st.columns(4)
+
+    for i,cat in enumerate(all_categories):
+
+        with cols[i%4]:
 
             if cat["Category"]=="All":
 
-                st.image(
-                    "https://cdn-icons-png.flaticon.com/512/3144/3144456.png",
-                    width=70
-                )
-                
+                img="https://cdn-icons-png.flaticon.com/512/3144/3144456.png"
 
             else:
 
-                st.image(
-                    get_image_url(cat["Image"]),
-                    width=70
-                )
+                img=get_image_url(cat["Image"])
+
+            st.markdown(
+                f"""
+                <div class="category-box">
+
+                <img src="{img}">
+
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
 
             if st.button(
                 cat["Category"],
-                key=f"cat_{cat['Category']}",
+                key=f"cat_{i}",
                 use_container_width=True
             ):
 
                 st.session_state.selected_category=cat["Category"]
+
+                st.rerun()
                 
     # ---------------- Session State ----------------
 
@@ -1218,13 +1273,18 @@ else:
         st.markdown("""
         <style>
 
-        div.stButton > button:first-child {
-            background:#ff3f6c !important;
-            color:white !important;
-            font-size:22px !important;
-            font-weight:bold !important;
-            height:60px !important;
-            border-radius:15px !important;
+        div.stButton > button{
+
+        height:34px !important;
+
+        font-size:13px !important;
+
+        border-radius:10px !important;
+
+        padding:0px !important;
+
+        margin-top:-6px;
+
         }
 
         </style>
