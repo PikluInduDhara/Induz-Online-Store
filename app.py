@@ -72,7 +72,7 @@ try:
     products_sheet = sheet.worksheet("products")
     orders_sheet = sheet.worksheet("orders")
     reviews_sheet = sheet.worksheet("Reviews")
-    @st.cache_data(ttl=60)
+    @st.cache_data(ttl=5)
     def load_products():
         return products_sheet.get_all_records()
 
@@ -625,8 +625,17 @@ if mode == "Admin":
                 c[8].write(o["quantity"])
                 c[9].write(str(o.get("total", 0)))
 
-                payment = c[10].selectbox("", ["Yes","No"],
-                    index=0 if o["payment"]=="Yes" else 1, key=f"pay{i}")
+                payment_options = ["Yes", "No"]
+
+                current_payment = str(o.get("payment", "No")).strip()
+
+                payment = c[10].selectbox(
+                    "",
+                    payment_options,
+                    index=payment_options.index(current_payment)
+                        if current_payment in payment_options else 1,
+                    key=f"pay{i}"
+                )
 
                 pay_ref = c[11].text_input("", value=o.get("payment_ref",""), key=f"pref{i}")
                 del_ref = c[12].text_input("", value=o.get("delivery_ref",""), key=f"dref{i}")
@@ -634,16 +643,22 @@ if mode == "Admin":
                 if o["status"] == "Cancelled":
                     status = c[13].selectbox("", ["Cancelled"], key=f"status{i}")
                 else:
+                    status_options = [
+                        "Pending",
+                        "Accepted",
+                        "Packed",
+                        "Shipped",
+                        "Delivered",
+                        "Cancelled"
+                    ]
+
+                    current_status = str(o.get("status", "Pending")).strip()
+
                     status = c[13].selectbox(
                         "",
-                        [
-                            "Pending",
-                            "Accepted",
-                            "Packed",
-                            "Shipped",
-                            "Delivered",
-                            "Cancelled"
-                        ],
+                        status_options,
+                        index=status_options.index(current_status)
+                            if current_status in status_options else 0,
                         key=f"status{i}"
                     )
 
