@@ -975,6 +975,18 @@ else:
 
     </style>
     """, unsafe_allow_html=True)
+    st.markdown("""
+    <style>
+
+    div.stButton > button{
+        height:40px !important;
+        min-height:40px !important;
+        font-size:13px !important;
+        border-radius:12px !important;
+    }
+
+    </style>
+    """, unsafe_allow_html=True)
 
     st.markdown(
         '<div class="category-title">🛍️ Shop By Category</div>',
@@ -984,7 +996,12 @@ else:
     # CATEGORY ICONS
     all_categories = [{"Category":"All","Image":""}] + category_data
 
-    cat_cols = st.columns(6)
+    is_mobile = st.query_params.get("mobile", "0") == "1"
+
+    if is_mobile:
+        cat_cols = st.columns(5)
+    else:
+        cat_cols = st.columns(8)
 
     for i, cat in enumerate(all_categories):
 
@@ -994,14 +1011,15 @@ else:
 
                 st.image(
                     "https://cdn-icons-png.flaticon.com/512/3144/3144456.png",
-                    use_container_width=True
+                    width=70
                 )
+                
 
             else:
 
                 st.image(
                     get_image_url(cat["Image"]),
-                    use_container_width=True
+                    width=70
                 )
 
             if st.button(
