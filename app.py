@@ -1070,11 +1070,11 @@ else:
         # -------- DISPLAY PRODUCTS --------
         product_list = list(grouped.items())
 
-        for idx in range(0, len(product_list), 2):
+        for idx in range(0, len(product_list), 4):
 
-            cols = st.columns(2)
+            cols = st.columns(4)
 
-            for col_num in range(2):
+            for col_num in range(4):
 
                 if idx + col_num < len(product_list):
 
@@ -1117,13 +1117,13 @@ else:
 
                                     st.image(
                                         get_image_url(images[0]),
-                                        width=160
+                                        use_container_width=True
                                     )
 
                                 # PRODUCT NAME
                                 st.markdown(f"""
                                 <h3 style="
-                                    font-size:18px;
+                                    font-size:16px;
                                     margin-top:10px;
                                     margin-bottom:5px;
                                     color:#222;
@@ -1136,7 +1136,7 @@ else:
                                 st.markdown(f"""
                                 <h2 style="
                                     color:#ff3f6c;
-                                    font-size:24px;
+                                    font-size:28px;
                                     margin-top:0;
                                 ">
                                 ₹{cost}
@@ -1145,7 +1145,7 @@ else:
 
                                 # VIEW DETAILS BUTTON
                                 if st.button(
-                                    "👀 View Details",
+                                    "👀 View Product",
                                     key=f"view_{idx}_{col_num}",
                                     use_container_width=True
                                 ):
