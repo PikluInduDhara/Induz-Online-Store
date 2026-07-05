@@ -396,8 +396,11 @@ if mode == "Admin":
             st.subheader("➕ Add Product")
 
             new_name = st.text_input("Product Name")
-            new_price = st.text_input("Price")new_mrp = st.text_input("MRP")
+
+            new_mrp = st.text_input("MRP")
+
             new_price = st.text_input("Selling Price")
+            
             new_stock = st.number_input("Stock", 0, 1000)
             new_category = st.text_input("Category (optional)")
             new_sizes = st.selectbox(
@@ -935,10 +938,10 @@ else:
     
     for p in products:
 
-    # Keep old code working
-    p["cost"] = int(p.get("Selling Price", 0))
+        # Keep old code working
+        p["cost"] = int(p.get("Selling Price", 0))
 
-    p["mrp"] = int(p.get("MRP", p["cost"]))
+        p["mrp"] = int(p.get("MRP", p["cost"]))
     
 
     # 🔥 SEARCH BAR
