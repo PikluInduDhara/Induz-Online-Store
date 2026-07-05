@@ -1012,8 +1012,6 @@ else:
 
                 st.session_state.selected_category=cat["Category"]
                 
-    selected_category = st.session_state.selected_category
-
     # ---------------- Session State ----------------
 
     if "cart" not in st.session_state:
