@@ -938,10 +938,25 @@ else:
     
     for p in products:
 
-        # Keep old code working
-        p["cost"] = int(p.get("Selling Price", 0))
+        # Selling Price
+        try:
+            p["cost"] = int(float(p.get("Selling Price", p.get("cost",0))))
+        except:
+            p["cost"] = 0
 
-        p["mrp"] = int(p.get("MRP", p["cost"]))
+        # MRP
+        try:
+            p["mrp"] = int(float(p.get("MRP", p["cost"])))
+        except:
+            p["mrp"] = p["cost"]
+
+        # Discount
+        if p["mrp"] > 0:
+            p["discount"] = int(
+                ((p["mrp"] - p["cost"]) / p["mrp"]) * 100
+            )
+        else:
+            p["discount"] = 0
     
 
     # 🔥 SEARCH BAR
@@ -1219,14 +1234,39 @@ else:
                                 """, unsafe_allow_html=True)
 
                                 # PRICE
+                                mrp = items[0]["mrp"]
+                                discount = items[0]["discount"]
+
                                 st.markdown(f"""
-                                <h2 style="
-                                    color:#ff3f6c;
-                                    font-size:28px;
-                                    margin-top:0;
+                                <div style="margin-top:8px;">
+
+                                <span style="
+                                font-size:24px;
+                                font-weight:700;
+                                color:#222;
                                 ">
                                 ₹{cost}
-                                </h2>
+                                </span>
+
+                                <span style="
+                                font-size:18px;
+                                color:#888;
+                                text-decoration:line-through;
+                                margin-left:8px;
+                                ">
+                                ₹{mrp}
+                                </span>
+
+                                <span style="
+                                font-size:18px;
+                                color:#ff905a;
+                                font-weight:700;
+                                margin-left:8px;
+                                ">
+                                ({discount}% OFF)
+                                </span>
+
+                                </div>
                                 """, unsafe_allow_html=True)
 
                                 # VIEW DETAILS BUTTON
@@ -1327,14 +1367,49 @@ else:
         # RIGHT SIDE DETAILS
         with col2:
 
+            price = int(selected_product["cost"])
+            mrp = int(selected_product["mrp"])
+            discount = int(selected_product["discount"])
+
             st.markdown(f"""
-            <h1 style="
-                color:#222;
-                font-size:42px;
-                font-weight:800;
+            <div style="margin-top:20px;">
+
+            <span style="
+            font-size:42px;
+            font-weight:700;
+            color:#222;
             ">
-            {name}
-            </h1>
+            ₹{price}
+            </span>
+
+            <span style="
+            font-size:30px;
+            text-decoration:line-through;
+            color:#999;
+            margin-left:12px;
+            ">
+            ₹{mrp}
+            </span>
+
+            <span style="
+            font-size:30px;
+            color:#ff905a;
+            font-weight:700;
+            margin-left:12px;
+            ">
+            ({discount}% OFF)
+            </span>
+
+            </div>
+
+            <div style="
+            color:green;
+            font-size:18px;
+            margin-top:8px;
+            ">
+            inclusive of all taxes
+            </div>
+
             """, unsafe_allow_html=True)
             
             color_list = list(set([
