@@ -1279,10 +1279,13 @@ else:
                                     st.session_state.selected_product = {
                                         "name": name,
                                         "cost": cost,
+                                        "mrp": items[0]["mrp"],
+                                        "discount": items[0]["discount"],
                                         "image": image,
                                         "category": category,
                                         "items": items
                                     }
+                                    
 
                                     st.session_state.page = "product"
 
@@ -1366,51 +1369,6 @@ else:
             st.empty()
         # RIGHT SIDE DETAILS
         with col2:
-
-            price = int(selected_product["cost"])
-            mrp = int(selected_product["mrp"])
-            discount = int(selected_product["discount"])
-
-            st.markdown(f"""
-            <div style="margin-top:20px;">
-
-            <span style="
-            font-size:42px;
-            font-weight:700;
-            color:#222;
-            ">
-            ₹{price}
-            </span>
-
-            <span style="
-            font-size:30px;
-            text-decoration:line-through;
-            color:#999;
-            margin-left:12px;
-            ">
-            ₹{mrp}
-            </span>
-
-            <span style="
-            font-size:30px;
-            color:#ff905a;
-            font-weight:700;
-            margin-left:12px;
-            ">
-            ({discount}% OFF)
-            </span>
-
-            </div>
-
-            <div style="
-            color:green;
-            font-size:18px;
-            margin-top:8px;
-            ">
-            inclusive of all taxes
-            </div>
-
-            """, unsafe_allow_html=True)
             
             color_list = list(set([
                 str(x.get("color","Default"))
@@ -1464,6 +1422,49 @@ else:
             if selected_product is None:
 
                 selected_product = items[0]
+                price = int(selected_product["cost"])
+                mrp = int(selected_product.get("mrp", price))
+                discount = int(selected_product.get("discount", 0))
+
+                st.markdown(f"""
+                <div style="margin-top:20px;">
+
+                <span style="
+                font-size:42px;
+                font-weight:700;
+                color:#222;
+                ">
+                ₹{price}
+                </span>
+
+                <span style="
+                font-size:30px;
+                text-decoration:line-through;
+                color:#999;
+                margin-left:12px;
+                ">
+                ₹{mrp}
+                </span>
+
+                <span style="
+                font-size:30px;
+                color:#ff905a;
+                font-weight:700;
+                margin-left:12px;
+                ">
+                ({discount}% OFF)
+                </span>
+
+                </div>
+
+                <div style="
+                color:green;
+                font-size:18px;
+                margin-top:8px;
+                ">
+                inclusive of all taxes
+                </div>
+                """, unsafe_allow_html=True)
             # ✅ DYNAMIC IMAGES BY COLOR + SIZE
             selected_images = [
                 img.strip()
