@@ -396,7 +396,8 @@ if mode == "Admin":
             st.subheader("➕ Add Product")
 
             new_name = st.text_input("Product Name")
-            new_price = st.text_input("Price")
+            new_price = st.text_input("Price")new_mrp = st.text_input("MRP")
+            new_price = st.text_input("Selling Price")
             new_stock = st.number_input("Stock", 0, 1000)
             new_category = st.text_input("Category (optional)")
             new_sizes = st.selectbox(
@@ -435,11 +436,12 @@ if mode == "Admin":
 
                     image_name = ",".join(image_names)
                     products_sheet.append_row([
-                        len(load_products())+1,
+                        len(load_products()) + 1,
                         new_name,
+                        new_mrp,
                         new_price,
-                        new_sizes,      # ✅ size column
-                        new_stock,      # ✅ stock column
+                        new_sizes,
+                        new_stock,
                         image_name,
                         new_category,
                         new_color,
@@ -930,6 +932,14 @@ else:
             st.markdown(slider_html, unsafe_allow_html=True)
 
     products = load_products()
+    
+    for p in products:
+
+    # Keep old code working
+    p["cost"] = int(p.get("Selling Price", 0))
+
+    p["mrp"] = int(p.get("MRP", p["cost"]))
+    
 
     # 🔥 SEARCH BAR
     search_text = st.text_input("🔍 Search Product")
