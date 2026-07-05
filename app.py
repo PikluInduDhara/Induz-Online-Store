@@ -1014,20 +1014,27 @@ else:
                 
     selected_category = st.session_state.selected_category
 
+    # ---------------- Session State ----------------
+
     if "cart" not in st.session_state:
         st.session_state.cart = []
 
     if "order_done" not in st.session_state:
         st.session_state.order_done = False
+
     if "page" not in st.session_state:
         st.session_state.page = "shop"
+
     if "selected_product" not in st.session_state:
         st.session_state.selected_product = None
+
     if "selected_category" not in st.session_state:
         st.session_state.selected_category = "All"
+
     if "track_phone" not in st.session_state:
         st.session_state.track_phone = ""
 
+    selected_category = st.session_state.selected_category
     cart_qty = sum(q for _, q, _ in st.session_state.cart)
 
     # -------- GROUP PRODUCTS (FLIPKART STYLE) --------
