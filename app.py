@@ -1012,7 +1012,7 @@ else:
 
                 st.session_state.selected_category=cat["Category"]
                 
-        selected_category = st.session_state.selected_category
+    selected_category = st.session_state.selected_category
 
     if "cart" not in st.session_state:
         st.session_state.cart = []
@@ -1023,8 +1023,11 @@ else:
         st.session_state.page = "shop"
     if "selected_product" not in st.session_state:
         st.session_state.selected_product = None
+    if "selected_category" not in st.session_state:
+        st.session_state.selected_category = "All"
     if "track_phone" not in st.session_state:
         st.session_state.track_phone = ""
+
     cart_qty = sum(q for _, q, _ in st.session_state.cart)
 
     # -------- GROUP PRODUCTS (FLIPKART STYLE) --------
