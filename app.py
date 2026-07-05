@@ -72,6 +72,7 @@ try:
     products_sheet = sheet.worksheet("products")
     orders_sheet = sheet.worksheet("orders")
     reviews_sheet = sheet.worksheet("Reviews")
+    category_sheet = sheet.worksheet("Categories")
     @st.cache_data(ttl=5)
     def load_products():
         return products_sheet.get_all_records()
@@ -82,6 +83,9 @@ try:
 
     @st.cache_data(ttl=60)
     def load_banners():
+        @st.cache_data(ttl=60)
+        def load_categories():
+            return category_sheet.get_all_records()
         banner_sheet = sheet.worksheet("Banners")
         return banner_sheet.get_all_records()
 except Exception as e:
@@ -928,10 +932,12 @@ else:
     search_text = st.text_input("🔍 Search Product")
 
     # 🔥 CATEGORY BUTTONS (VISIBLE LIKE AMAZON)
-    categories = sorted(list(set([
-        p.get("category","All")
-        for p in products
-    ])))
+    category_data = load_categories()
+
+    categories = [
+        c["Category"]
+        for c in category_data
+    ]
     # -------- PREMIUM CATEGORY SECTION --------
 
     st.markdown("""
@@ -973,58 +979,36 @@ else:
     )
 
     # CATEGORY ICONS
-    cat_icons = {
+all_categories = [{"Category":"All","Image":""}] + category_data
 
-        "Saree": "🥻",
-        "Dress Men": "👔",
-        "Dress WoMen": "👗",
-        "Jewellery": "💍",
-        "Necklace": "📿",
-        "Earrings": "✨",
-        "Bangles": "🪬",
-        "Kurti": "🌸",
-        "Lehenga": "👑",
-        "Kids": "🧸",
-        "Bags": "👜",
-        "Handbag": "👜",
-        "Beauty": "💄",
-        "Shoes": "👠",
-        "Watch": "⌚",
-        "Gift": "🎁",
-        "Home Decor": "🏠",
-        "Toy": "🚗",
-        "Car Toy": "🚘",
-        "Makeup": "💋",
-        "Perfume": "🌺",
-        "Festival": "🎉",
-        "Wedding": "💒",
-        "All": "🛍️"
-    }
+cat_cols = st.columns(6)
 
-    all_categories = ["All"] + categories
+for i, cat in enumerate(all_categories):
 
-    # SAVE CATEGORY
-    if "selected_category" not in st.session_state:
-        st.session_state.selected_category = "All"
+    with cat_cols[i % 6]:
 
-    cat_cols = st.columns(4)
+        if cat["Category"]=="All":
 
-    for i, cat in enumerate(all_categories):
+            st.image(
+                "https://cdn-icons-png.flaticon.com/512/3144/3144456.png",
+                use_container_width=True
+            )
 
-        icon = cat_icons.get(cat, "🛒")
+        else:
 
-        with cat_cols[i % 4]:
+            st.image(
+                get_image_url(cat["Image"]),
+                use_container_width=True
+            )
 
-            st.markdown('<div class="category-card">', unsafe_allow_html=True)
+        if st.button(
+            cat["Category"],
+            key=f"cat_{cat['Category']}",
+            use_container_width=True
+        ):
 
-            if st.button(
-                f"{icon}\n{cat}",
-                key=f"cat_{cat}"
-            ):
-                st.session_state.selected_category = cat
-
-            st.markdown('</div>', unsafe_allow_html=True)
-
+            st.session_state.selected_category=cat["Category"]
+            
     selected_category = st.session_state.selected_category
 
     if "cart" not in st.session_state:
