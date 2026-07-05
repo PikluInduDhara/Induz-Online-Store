@@ -1016,7 +1016,9 @@ else:
         width:90px;
         height:90px;
 
-        object-fit:cover;
+        object-fit:contain;
+        background:white;
+        padding:4px;
 
         border-radius:50%;
 
