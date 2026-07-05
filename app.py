@@ -1013,16 +1013,19 @@ else:
 
     .category-box img{
 
-        width:100px;
-        height:100px;
+        width:90px;
+        height:90px;
 
         object-fit:cover;
 
-        border-radius:18px;
+        border-radius:50%;
 
-        border:1px solid #f0f0f0;
+        border:3px solid #fff;
+
+        box-shadow:0 4px 10px rgba(0,0,0,.12);
 
         transition:.25s;
+
     }
 
     .category-box img:hover{
