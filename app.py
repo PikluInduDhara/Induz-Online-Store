@@ -470,7 +470,7 @@ if mode == "Admin":
 
                     for j, img in enumerate(images):
                         cols[j % 3].image(get_image_url(img), width=120)
-                col1.write(f"{p['name']} ₹{p['cost']}")
+                col1.write(f"{p['name']} ₹{p['Selling Price']}")
                 col1.write(f"Sizes: {p.get('size','')}")
                 col1.write(f"Color: {p.get('color','Default')}")
 
