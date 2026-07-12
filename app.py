@@ -484,7 +484,7 @@ if mode == "Admin":
                 )
 
                 if col3.button("Update", key=f"u{i}"):
-                    products_sheet.update_cell(i, 5, int(new_stock))
+                    products_sheet.update_cell(i, 6, int(new_stock))
                     st.cache_data.clear()
                     st.rerun()
 
@@ -698,7 +698,7 @@ if mode == "Admin":
                                 and str(p.get("color","Default")) == str(o.get("color","Default"))
                             ):
                                 new_stock = int(p["stock"]) + int(o["quantity"])
-                                products_sheet.update_cell(j, 5, int(new_stock))
+                                products_sheet.update_cell(j, 6, int(new_stock))
 
                     # ✅ UPDATE ORDER (ONLY ONCE)
                     orders_sheet.update_cell(i, 14, payment)
@@ -1913,7 +1913,7 @@ else:
                                 and str(prod.get("color","Default")) == str(p.get("selected_color","Default"))
                             ):
                                 new_stock = max(0, int(prod["stock"]) - q)
-                                products_sheet.update_cell(k, 5, int(new_stock))
+                                products_sheet.update_cell(k, 6, int(new_stock))
 
                     st.cache_data.clear()
 
