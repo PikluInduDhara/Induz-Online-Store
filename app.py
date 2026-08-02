@@ -5,6 +5,12 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+query_params = st.query_params
+
+if "code" in query_params:
+    scanned_code = query_params["code"]
+else:
+    scanned_code = None
 from streamlit_image_carousel import image_carousel
 import os
 import urllib.parse
@@ -977,7 +983,7 @@ else:
 
         matched_products = [
             p for p in products
-            if str(p.get("code", "")).strip().upper() == qr_code.upper()
+            if str(p.get("Product Code", "")).strip().upper() == qr_code.upper()
         ]
 
         if matched_products:
