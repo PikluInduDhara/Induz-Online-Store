@@ -936,6 +936,17 @@ else:
 
     products = load_products()
     
+    # ===================================
+    # QR CODE SUPPORT
+    # ===================================
+
+    query_params = st.query_params
+
+    qr_code = query_params.get("code", "")
+
+    if qr_code:
+        qr_code = str(qr_code).strip()
+    
     for p in products:
 
         # Selling Price
