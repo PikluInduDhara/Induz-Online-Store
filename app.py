@@ -968,6 +968,37 @@ else:
             )
         else:
             p["discount"] = 0
+            
+    # ===================================
+    # OPEN PRODUCT FROM QR CODE
+    # ===================================
+
+    if qr_code:
+
+        matched_products = [
+            p for p in products
+            if str(p.get("code", "")).strip().upper() == qr_code.upper()
+        ]
+
+        if matched_products:
+
+            first = matched_products[0]
+
+            st.session_state.selected_product = {
+                "name": first["name"],
+                "cost": first["cost"],
+                "mrp": first["mrp"],
+                "discount": first["discount"],
+                "image": first.get("image", ""),
+                "category": first.get("category", ""),
+                "items": matched_products
+            }
+
+            st.session_state.page = "product"
+
+            st.query_params.clear()
+
+            st.rerun()
     
 
     # 🔥 SEARCH BAR
