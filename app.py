@@ -18,6 +18,7 @@ import pandas as pd
 import time
 import base64
 import requests
+import re
 import pgeocode
 import gspread
 
@@ -77,6 +78,15 @@ try:
     sheet = client.open("SajaiTomayDB")
     products_sheet = sheet.worksheet("products")
     orders_sheet = sheet.worksheet("orders")
+    # Separate sheet for walk-in/admin POS sales. Existing orders sheet is untouched.
+    try:
+        pos_sheet = sheet.worksheet("POS_Sales")
+    except:
+        pos_sheet = sheet.add_worksheet(title="POS_Sales", rows=1000, cols=12)
+        pos_sheet.append_row([
+            "Bill ID", "Date", "Customer", "Phone", "Product Code",
+            "Product", "Size", "Color", "Qty", "Unit Price", "Total", "Payment"
+        ])
     reviews_sheet = sheet.worksheet("Reviews")
     category_sheet = sheet.worksheet("Categories")
     @st.cache_data(ttl=5)
@@ -260,6 +270,7 @@ if mode == "Admin":
             [
                 "📊 Dashboard",
                 "📦 Products",
+                "🧾 POS Billing",
                 "🚚 Orders"
             ]
         )
@@ -502,6 +513,279 @@ if mode == "Admin":
             if st.button("🔄 Refresh"):
                 st.cache_data.clear()
                 st.rerun()
+        elif admin_page == "🧾 POS Billing":
+            # ================= ADMIN POS BILLING =================
+            # This is a separate walk-in billing flow. It does NOT change
+            # customer pricing, the existing cart, or the existing orders sheet.
+            st.header("🧾 Fast POS Billing")
+            st.caption("Scan the product QR/Product Code → edit the customer price → add to bill → create invoice.")
+
+            # -------- POS SESSION STATE --------
+            if "pos_cart" not in st.session_state:
+                st.session_state.pos_cart = []
+            if "pos_scan_text" not in st.session_state:
+                st.session_state.pos_scan_text = ""
+
+            # -------- SCAN / ENTER PRODUCT CODE --------
+            st.subheader("📷 Scan Product")
+            st.info("Use a USB/Bluetooth QR scanner like a keyboard scanner, or type/paste the Product Code. Scan and press Enter.")
+
+            with st.form("pos_scan_form", clear_on_submit=True):
+                scan_value = st.text_input(
+                    "Scan QR / Product Code",
+                    placeholder="Example: ST0001",
+                    key="pos_scan_input"
+                )
+                scan_submit = st.form_submit_button("➕ Scan / Add Product", use_container_width=True)
+
+            def _extract_pos_code(value):
+                value = str(value or "").strip()
+                if not value:
+                    return ""
+                # Scanner may return the full QR URL instead of only ST0001.
+                try:
+                    parsed = urllib.parse.urlparse(value)
+                    code = urllib.parse.parse_qs(parsed.query).get("code", [""])[0]
+                    if code:
+                        return str(code).strip().upper()
+                except:
+                    pass
+                # Also handle text containing ?code=...
+                m = re.search(r"[?&]code=([^&#\s]+)", value, flags=re.IGNORECASE)
+                if m:
+                    return urllib.parse.unquote(m.group(1)).strip().upper()
+                return value.strip().upper()
+
+            if scan_submit:
+                code = _extract_pos_code(scan_value)
+                if not code:
+                    st.warning("Please scan a Product QR or enter a Product Code.")
+                else:
+                    products_pos = load_products()
+                    matched = next(
+                        (
+                            p for p in products_pos
+                            if str(p.get("Product Code", "")).strip().upper() == code
+                        ),
+                        None
+                    )
+
+                    if matched is None:
+                        st.error(f"❌ Product Code {code} was not found in the products sheet.")
+                    else:
+                        stock_now = int(float(matched.get("stock", 0) or 0))
+                        if stock_now <= 0:
+                            st.error("❌ This product is out of stock.")
+                        else:
+                            # If the same Product Code is scanned again, increase quantity.
+                            found = False
+                            for n, item in enumerate(st.session_state.pos_cart):
+                                if item["code"] == code:
+                                    if item["qty"] < stock_now:
+                                        item["qty"] += 1
+                                        item["total"] = item["qty"] * item["unit_price"]
+                                    else:
+                                        st.warning("Maximum available stock already added.")
+                                    found = True
+                                    break
+
+                            if not found:
+                                try:
+                                    normal_price = int(float(matched.get("Selling Price", matched.get("cost", 0))))
+                                except:
+                                    normal_price = 0
+                                st.session_state.pos_cart.append({
+                                    "code": code,
+                                    "product": matched,
+                                    "qty": 1,
+                                    "unit_price": normal_price,
+                                    "stock": stock_now,
+                                    "total": normal_price,
+                                })
+                            st.rerun()
+
+            # -------- BILL ITEMS --------
+            if st.session_state.pos_cart:
+                st.markdown("---")
+                st.subheader("🛒 Current Bill")
+
+                pos_grand_total = 0
+                remove_index = None
+
+                for idx, item in enumerate(st.session_state.pos_cart):
+                    p = item["product"]
+                    default_price = int(item["unit_price"])
+                    max_qty = max(1, int(item["stock"]))
+
+                    c1, c2, c3, c4, c5, c6 = st.columns([2.2, 1.0, 1.0, 1.2, 1.2, 0.7])
+                    c1.markdown(
+                        f"**{p.get('name','')}**  \n"
+                        f"Code: `{item['code']}`  \n"
+                        f"Size: {p.get('size','NA')} | Color: {p.get('color','Default')}"
+                    )
+                    qty = c2.number_input("Qty", min_value=1, max_value=max_qty, value=int(item["qty"]), key=f"pos_qty_{idx}")
+                    price = c3.number_input("Customer Price", min_value=0, value=default_price, step=10, key=f"pos_price_{idx}")
+                    c4.write(f"Normal: ₹{default_price}")
+                    line_total = int(qty) * int(price)
+                    c5.markdown(f"**₹{line_total}**")
+                    if c6.button("❌", key=f"pos_remove_{idx}"):
+                        remove_index = idx
+
+                    item["qty"] = int(qty)
+                    item["unit_price"] = int(price)
+                    item["total"] = line_total
+                    pos_grand_total += line_total
+
+                if remove_index is not None:
+                    st.session_state.pos_cart.pop(remove_index)
+                    st.rerun()
+
+                st.markdown("---")
+                left, right = st.columns([3, 1])
+                with left:
+                    pos_customer = st.text_input("Customer Name (optional)", key="pos_customer")
+                    pos_phone = st.text_input("Phone (optional)", key="pos_phone")
+                with right:
+                    st.metric("TOTAL", f"₹{pos_grand_total}")
+                    pos_payment = st.selectbox("Payment", ["Cash", "UPI", "Card", "Other"], key="pos_payment")
+
+                b1, b2 = st.columns(2)
+                with b1:
+                    if st.button("🧹 Clear Bill", use_container_width=True):
+                        st.session_state.pos_cart = []
+                        st.rerun()
+
+                with b2:
+                    create_pos_bill = st.button("🧾 CREATE INVOICE", use_container_width=True, type="primary")
+
+                if create_pos_bill:
+                    if not st.session_state.pos_cart:
+                        st.error("Bill is empty.")
+                    else:
+                        # Re-check live stock immediately before committing the bill.
+                        products_latest = load_products()
+                        stock_ok = True
+                        for item in st.session_state.pos_cart:
+                            latest = next(
+                                (
+                                    p for p in products_latest
+                                    if str(p.get("Product Code", "")).strip().upper() == item["code"]
+                                ),
+                                None
+                            )
+                            if latest is None or int(float(latest.get("stock", 0) or 0)) < int(item["qty"]):
+                                stock_ok = False
+                                st.error(f"❌ Stock changed for {item['code']}. Please scan again.")
+                                break
+
+                        if stock_ok:
+                            # Generate a POS bill number without touching existing order IDs.
+                            try:
+                                existing_pos = pos_sheet.get_all_records()
+                            except:
+                                existing_pos = []
+                            existing_bill_ids = []
+                            for r in existing_pos:
+                                digits = re.sub(r"\D", "", str(r.get("Bill ID", "")))
+                                if digits:
+                                    existing_bill_ids.append(int(digits))
+                            pos_bill_no = max(existing_bill_ids, default=0) + 1
+                            pos_bill_id = f"POS{pos_bill_no:05d}"
+                            pos_date = time.strftime("%Y-%m-%d %H:%M:%S")
+
+                            # Save POS sales in the separate POS_Sales sheet.
+                            for item in st.session_state.pos_cart:
+                                p = item["product"]
+                                pos_sheet.append_row([
+                                    pos_bill_id,
+                                    pos_date,
+                                    pos_customer or "Walk-in Customer",
+                                    pos_phone,
+                                    item["code"],
+                                    p.get("name", ""),
+                                    p.get("size", "NA"),
+                                    p.get("color", "Default"),
+                                    int(item["qty"]),
+                                    int(item["unit_price"]),
+                                    int(item["total"]),
+                                    pos_payment,
+                                ])
+
+                            # Reduce stock only after the POS sale has been recorded.
+                            for item in st.session_state.pos_cart:
+                                for row_num, prod in enumerate(products_latest, start=2):
+                                    if str(prod.get("Product Code", "")).strip().upper() == item["code"]:
+                                        new_stock = int(float(prod.get("stock", 0) or 0)) - int(item["qty"])
+                                        products_sheet.update_cell(row_num, 6, max(0, new_stock))
+                                        break
+
+                            # Build a compact walk-in invoice. Existing online invoice is untouched.
+                            pos_invoice_file = f"POS_{pos_bill_id}.pdf"
+                            pos_doc = SimpleDocTemplate(pos_invoice_file)
+                            pos_styles = getSampleStyleSheet()
+                            pos_elements = []
+
+                            if os.path.exists("images/logo.png"):
+                                pos_elements.append(Image("images/logo.png", width=100, height=100))
+                            pos_elements.append(Paragraph("<b>SAJAI TOMAY</b>", pos_styles["Title"]))
+                            pos_elements.append(Paragraph("<b>WALK-IN SALES INVOICE</b>", pos_styles["Heading2"]))
+                            pos_elements.append(Spacer(1, 10))
+                            pos_elements.append(Paragraph(f"<b>Bill No:</b> {pos_bill_id}", pos_styles["Normal"]))
+                            pos_elements.append(Paragraph(f"<b>Date:</b> {pos_date}", pos_styles["Normal"]))
+                            pos_elements.append(Paragraph(f"<b>Customer:</b> {pos_customer or 'Walk-in Customer'}", pos_styles["Normal"]))
+                            if pos_phone:
+                                pos_elements.append(Paragraph(f"<b>Phone:</b> {pos_phone}", pos_styles["Normal"]))
+                            pos_elements.append(Spacer(1, 12))
+
+                            pos_table_data = [["Product", "Code", "Qty", "Price", "Total"]]
+                            for item in st.session_state.pos_cart:
+                                p = item["product"]
+                                pos_table_data.append([
+                                    str(p.get("name", "")),
+                                    str(item["code"]),
+                                    str(item["qty"]),
+                                    f"₹{int(item['unit_price'])}",
+                                    f"₹{int(item['total'])}",
+                                ])
+                            pos_table = Table(pos_table_data, repeatRows=1)
+                            pos_table.setStyle(TableStyle([
+                                ("BACKGROUND", (0,0), (-1,0), colors.pink),
+                                ("TEXTCOLOR", (0,0), (-1,0), colors.white),
+                                ("GRID", (0,0), (-1,-1), 1, colors.black),
+                                ("ALIGN", (2,1), (-1,-1), "CENTER"),
+                            ]))
+                            pos_elements.append(pos_table)
+                            pos_elements.append(Spacer(1, 15))
+                            pos_elements.append(Paragraph(f"<b>Grand Total: ₹{pos_grand_total}</b>", pos_styles["Heading2"]))
+                            pos_elements.append(Paragraph(f"<b>Payment:</b> {pos_payment}", pos_styles["Normal"]))
+                            pos_elements.append(Spacer(1, 15))
+                            pos_elements.append(Paragraph("Thank you for shopping with SAJAI TOMAY ❤️", pos_styles["Normal"]))
+                            pos_doc.build(pos_elements)
+
+                            with open(pos_invoice_file, "rb") as f:
+                                st.session_state.pos_invoice_bytes = f.read()
+                            st.session_state.pos_last_bill = pos_bill_id
+                            st.session_state.pos_last_total = pos_grand_total
+                            st.session_state.pos_cart = []
+                            st.cache_data.clear()
+                            st.success(f"✅ Bill {pos_bill_id} created successfully.")
+                            st.rerun()
+
+            # -------- LAST POS INVOICE --------
+            if st.session_state.get("pos_invoice_bytes"):
+                st.markdown("---")
+                st.success(
+                    f"🧾 Last Bill: {st.session_state.get('pos_last_bill','')} | "
+                    f"Total: ₹{st.session_state.get('pos_last_total',0)}"
+                )
+                st.download_button(
+                    "📄 Download POS Invoice",
+                    st.session_state.pos_invoice_bytes,
+                    f"{st.session_state.get('pos_last_bill','POS_Invoice')}.pdf",
+                    mime="application/pdf",
+                    use_container_width=True,
+                )
+
         elif admin_page == "🚚 Orders":
             # -------- DELIVERY DASHBOARD --------
             st.subheader("Delivery Dashboard")
