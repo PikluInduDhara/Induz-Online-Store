@@ -21,6 +21,10 @@ import requests
 import re
 import numpy as np
 import cv2
+try:
+    import zxingcpp
+except ImportError:
+    zxingcpp = None
 import pgeocode
 import gspread
 
@@ -614,20 +618,127 @@ if mode == "Admin":
                 return True
 
             # -------- MOBILE CAMERA QR DECODE --------
+            # ZXing-C++ is tried first because it is much more tolerant of
+            # real-world camera photos than the basic OpenCV QR decoder.
+            def _decode_pos_qr(frame):
+                if frame is None:
+                    return ""
+
+                # 1) ZXing-C++: scanner-style decoding with rotation,
+                # downscaling and inverted-code attempts enabled.
+                if zxingcpp is not None:
+                    candidates = [frame]
+
+                    # A larger copy helps when the phone camera captured a
+                    # relatively small QR inside a large photo.
+                    h, w = frame.shape[:2]
+                    if max(h, w) < 1400:
+                        scale = min(3.0, 1400.0 / max(h, w))
+                        if scale > 1.05:
+                            candidates.append(
+                                cv2.resize(
+                                    frame,
+                                    None,
+                                    fx=scale,
+                                    fy=scale,
+                                    interpolation=cv2.INTER_CUBIC
+                                )
+                            )
+
+                    for candidate in candidates:
+                        try:
+                            results = zxingcpp.read_barcodes(
+                                candidate,
+                                try_rotate=True,
+                                try_downscale=True,
+                                try_invert=True
+                            )
+                            for result in results:
+                                value = str(getattr(result, "text", "") or "").strip()
+                                if value:
+                                    return value
+                        except Exception:
+                            pass
+
+                # 2) OpenCV fallback. Keep the old method so the app still
+                # works if ZXing is temporarily unavailable.
+                detector = cv2.QRCodeDetector()
+
+                variants = [frame]
+
+                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                variants.append(gray)
+
+                h, w = gray.shape[:2]
+                max_dim = max(h, w)
+
+                # Try enlarged images for small/distant QR codes.
+                for scale in (2.0, 3.0):
+                    if max_dim < 1800:
+                        up = cv2.resize(
+                            gray,
+                            None,
+                            fx=scale,
+                            fy=scale,
+                            interpolation=cv2.INTER_CUBIC
+                        )
+                        variants.append(up)
+
+                        # Contrast/sharpened version.
+                        blur = cv2.GaussianBlur(up, (3, 3), 0)
+                        sharp = cv2.addWeighted(up, 1.7, blur, -0.7, 0)
+                        variants.append(sharp)
+
+                        # Otsu binary version.
+                        variants.append(
+                            cv2.threshold(
+                                up, 0, 255,
+                                cv2.THRESH_BINARY + cv2.THRESH_OTSU
+                            )[1]
+                        )
+
+                for candidate in variants:
+                    try:
+                        decoded_text, points, _ = detector.detectAndDecode(candidate)
+                        if decoded_text:
+                            return decoded_text.strip()
+                    except Exception:
+                        pass
+
+                    # Curved/angled labels can sometimes decode here.
+                    try:
+                        decoded_text, points, _ = detector.detectAndDecodeCurved(candidate)
+                        if decoded_text:
+                            return decoded_text.strip()
+                    except Exception:
+                        pass
+
+                return ""
+
             if camera_photo is not None:
                 try:
                     image_bytes = camera_photo.getvalue()
                     image_array = np.frombuffer(image_bytes, dtype=np.uint8)
                     frame = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
-                    detector = cv2.QRCodeDetector()
-                    decoded_text, points, _ = detector.detectAndDecode(frame)
+
+                    decoded_text = _decode_pos_qr(frame)
 
                     if decoded_text:
                         if _add_pos_product(decoded_text):
                             st.session_state.pos_camera_key += 1
                             st.rerun()
                     else:
-                        st.warning("⚠️ QR not detected. Please keep the QR inside the camera frame and try again.")
+                        if zxingcpp is None:
+                            st.warning(
+                                "⚠️ QR not detected. Please add `zxing-cpp` to "
+                                "requirements.txt for stronger scanner-style QR detection."
+                            )
+                        else:
+                            st.warning(
+                                "⚠️ QR not detected. Move the phone slightly closer, "
+                                "keep the full QR visible with a little white space around it, "
+                                "and capture again."
+                            )
                 except Exception as e:
                     st.error(f"⚠️ Camera/QR scan error: {e}")
 
