@@ -19,6 +19,8 @@ import time
 import base64
 import requests
 import re
+import numpy as np
+import cv2
 import pgeocode
 import gspread
 
@@ -526,23 +528,31 @@ if mode == "Admin":
             if "pos_scan_text" not in st.session_state:
                 st.session_state.pos_scan_text = ""
 
-            # -------- SCAN / ENTER PRODUCT CODE --------
+            # -------- SCAN PRODUCT --------
             st.subheader("📷 Scan Product")
-            st.info("Use a USB/Bluetooth QR scanner like a keyboard scanner, or type/paste the Product Code. Scan and press Enter.")
+            st.info("📱 On mobile, tap the camera box below → scan the product QR → the product will be added automatically. Manual Product Code entry is also available.")
 
-            with st.form("pos_scan_form", clear_on_submit=True):
-                scan_value = st.text_input(
-                    "Scan QR / Product Code",
-                    placeholder="Example: ST0001",
-                    key="pos_scan_input"
-                )
-                scan_submit = st.form_submit_button("➕ Scan / Add Product", use_container_width=True)
+            if "pos_camera_key" not in st.session_state:
+                st.session_state.pos_camera_key = 0
+
+            camera_photo = st.camera_input(
+                "📷 Open Camera & Scan QR",
+                key=f"pos_camera_{st.session_state.pos_camera_key}"
+            )
+
+            with st.expander("⌨️ Manual Product Code / Scanner", expanded=False):
+                with st.form("pos_scan_form", clear_on_submit=True):
+                    scan_value = st.text_input(
+                        "Product Code or QR URL",
+                        placeholder="Example: ST0001",
+                        key="pos_scan_input"
+                    )
+                    scan_submit = st.form_submit_button("➕ Add Product", use_container_width=True)
 
             def _extract_pos_code(value):
                 value = str(value or "").strip()
                 if not value:
                     return ""
-                # Scanner may return the full QR URL instead of only ST0001.
                 try:
                     parsed = urllib.parse.urlparse(value)
                     code = urllib.parse.parse_qs(parsed.query).get("code", [""])[0]
@@ -550,59 +560,80 @@ if mode == "Admin":
                         return str(code).strip().upper()
                 except:
                     pass
-                # Also handle text containing ?code=...
                 m = re.search(r"[?&]code=([^&#\s]+)", value, flags=re.IGNORECASE)
                 if m:
                     return urllib.parse.unquote(m.group(1)).strip().upper()
                 return value.strip().upper()
 
-            if scan_submit:
-                code = _extract_pos_code(scan_value)
+            def _add_pos_product(code):
+                code = _extract_pos_code(code)
                 if not code:
                     st.warning("Please scan a Product QR or enter a Product Code.")
-                else:
-                    products_pos = load_products()
-                    matched = next(
-                        (
-                            p for p in products_pos
-                            if str(p.get("Product Code", "")).strip().upper() == code
-                        ),
-                        None
-                    )
+                    return False
 
-                    if matched is None:
-                        st.error(f"❌ Product Code {code} was not found in the products sheet.")
-                    else:
-                        stock_now = int(float(matched.get("stock", 0) or 0))
-                        if stock_now <= 0:
-                            st.error("❌ This product is out of stock.")
+                products_pos = load_products()
+                matched = next(
+                    (
+                        p for p in products_pos
+                        if str(p.get("Product Code", "")).strip().upper() == code
+                    ),
+                    None
+                )
+
+                if matched is None:
+                    st.error(f"❌ Product Code {code} was not found in the products sheet.")
+                    return False
+
+                stock_now = int(float(matched.get("stock", 0) or 0))
+                if stock_now <= 0:
+                    st.error("❌ This product is out of stock.")
+                    return False
+
+                for item in st.session_state.pos_cart:
+                    if item["code"] == code:
+                        if item["qty"] < stock_now:
+                            item["qty"] += 1
+                            item["total"] = item["qty"] * item["unit_price"]
                         else:
-                            # If the same Product Code is scanned again, increase quantity.
-                            found = False
-                            for n, item in enumerate(st.session_state.pos_cart):
-                                if item["code"] == code:
-                                    if item["qty"] < stock_now:
-                                        item["qty"] += 1
-                                        item["total"] = item["qty"] * item["unit_price"]
-                                    else:
-                                        st.warning("Maximum available stock already added.")
-                                    found = True
-                                    break
+                            st.warning("Maximum available stock already added.")
+                        return True
 
-                            if not found:
-                                try:
-                                    normal_price = int(float(matched.get("Selling Price", matched.get("cost", 0))))
-                                except:
-                                    normal_price = 0
-                                st.session_state.pos_cart.append({
-                                    "code": code,
-                                    "product": matched,
-                                    "qty": 1,
-                                    "unit_price": normal_price,
-                                    "stock": stock_now,
-                                    "total": normal_price,
-                                })
+                try:
+                    normal_price = int(float(matched.get("Selling Price", matched.get("cost", 0))))
+                except:
+                    normal_price = 0
+
+                st.session_state.pos_cart.append({
+                    "code": code,
+                    "product": matched,
+                    "qty": 1,
+                    "unit_price": normal_price,
+                    "stock": stock_now,
+                    "total": normal_price,
+                })
+                return True
+
+            # -------- MOBILE CAMERA QR DECODE --------
+            if camera_photo is not None:
+                try:
+                    image_bytes = camera_photo.getvalue()
+                    image_array = np.frombuffer(image_bytes, dtype=np.uint8)
+                    frame = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
+                    detector = cv2.QRCodeDetector()
+                    decoded_text, points, _ = detector.detectAndDecode(frame)
+
+                    if decoded_text:
+                        if _add_pos_product(decoded_text):
+                            st.session_state.pos_camera_key += 1
                             st.rerun()
+                    else:
+                        st.warning("⚠️ QR not detected. Please keep the QR inside the camera frame and try again.")
+                except Exception as e:
+                    st.error(f"⚠️ Camera/QR scan error: {e}")
+
+            if scan_submit:
+                if _add_pos_product(scan_value):
+                    st.rerun()
 
             # -------- BILL ITEMS --------
             if st.session_state.pos_cart:
@@ -711,7 +742,54 @@ if mode == "Admin":
                                     pos_payment,
                                 ])
 
-                            # Reduce stock only after the POS sale has been recorded.
+                            # Also save the walk-in POS sale into the SAME orders sheet
+                            # used by normal customer orders, so it appears in Admin → Orders.
+                            # This does not change the customer ordering flow.
+                            try:
+                                existing_order_rows = load_orders()
+                            except:
+                                existing_order_rows = []
+
+                            existing_order_ids = [
+                                int(o["id"])
+                                for o in existing_order_rows
+                                if str(o.get("id", "")).isdigit()
+                            ]
+                            walkin_order_id = max(existing_order_ids, default=0) + 1
+                            walkin_customer = pos_customer or "Walk-in Customer"
+                            walkin_city = "Walk-in Outlet"
+                            walkin_address = "Sajai Tomay Outlet - Walk-in Sale"
+                            walkin_payment_ref = pos_payment
+                            walkin_delivery_ref = f"Walk-in POS | {pos_bill_id}"
+                            walkin_date = time.strftime("%Y-%m-%d")
+
+                            for item in st.session_state.pos_cart:
+                                p = item["product"]
+                                save_size = str(p.get("size", "NA"))
+                                if save_size in ["", "Default"]:
+                                    save_size = "NA"
+
+                                orders_sheet.append_row([
+                                    walkin_order_id,
+                                    walkin_customer,
+                                    pos_phone or "-",
+                                    "-",
+                                    "-",
+                                    walkin_city,
+                                    walkin_address,
+                                    p.get("name", ""),
+                                    save_size,
+                                    p.get("color", "Default"),
+                                    int(item["qty"]),
+                                    int(item["total"]),
+                                    "Delivered",
+                                    "Yes",
+                                    walkin_payment_ref,
+                                    walkin_delivery_ref,
+                                    walkin_date,
+                                ])
+
+                            # Reduce stock only after both sales records have been written.
                             for item in st.session_state.pos_cart:
                                 for row_num, prod in enumerate(products_latest, start=2):
                                     if str(prod.get("Product Code", "")).strip().upper() == item["code"]:
@@ -765,6 +843,7 @@ if mode == "Admin":
                             with open(pos_invoice_file, "rb") as f:
                                 st.session_state.pos_invoice_bytes = f.read()
                             st.session_state.pos_last_bill = pos_bill_id
+                            st.session_state.pos_last_order_id = walkin_order_id
                             st.session_state.pos_last_total = pos_grand_total
                             st.session_state.pos_cart = []
                             st.cache_data.clear()
@@ -776,6 +855,7 @@ if mode == "Admin":
                 st.markdown("---")
                 st.success(
                     f"🧾 Last Bill: {st.session_state.get('pos_last_bill','')} | "
+                    f"Order ID: {st.session_state.get('pos_last_order_id','')} | "
                     f"Total: ₹{st.session_state.get('pos_last_total',0)}"
                 )
                 st.download_button(
