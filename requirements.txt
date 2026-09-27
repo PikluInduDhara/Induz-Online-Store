@@ -9,3 +9,4 @@ pgeocode
 streamlit-image-carousel
 opencv-python-headless
 numpy
+zxing-cpp
